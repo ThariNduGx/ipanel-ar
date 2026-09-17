@@ -70,3 +70,8 @@ Full wizard Android+iPhone; console clean; our JS/CSS separate in Network; /ar-t
 Adopted now: line-fit quad (mask boundary lines -> corner intersections), door-prior auto-scale (2.0m) with override, contact-shadow layer, privacy trust line, rAF-throttled drag, NSFWJS client gate on UGC.
 Phase 5 strategic: metric depth (Metric3D/Depth-Anything-metric) to remove manual measurement; depth-based occlusion; WebGL2 compositor with mipmaps + normal-map grooves; ONNX Runtime Web evaluation; i18n (si/ta); cut-list/waste installer tool.
 Rejected: LayoutNet/RoomNet, HarmonyNet/Poisson (license+weight risk), OpenCV.js WASM (line-fit covers need).
+
+## Deep-research disposition (Phase 4 close)
+Adopted now: line-fit quad (mask boundary lines -> corner intersections); door-prior auto-scale (2.0m) with override; contact-shadow layer; privacy trust line; rAF-throttled drag; NSFWJS client gate on UGC.
+Phase 5 strategic: metric depth (Metric3D / Depth-Anything-metric) to remove manual measurement; depth-based occlusion; WebGL2 compositor with mipmaps + normal-map grooves; ONNX Runtime Web evaluation; i18n (si/ta); cut-list/waste installer tool.
+Rejected: LayoutNet/RoomNet; HarmonyNet/Poisson (license + weight risk); OpenCV.js WASM (line-fit covers the need).
