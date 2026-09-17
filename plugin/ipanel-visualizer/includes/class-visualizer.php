@@ -27,7 +27,9 @@ class iPanel_Visualizer {
         echo '<h2>Finish colour calibration</h2><textarea name="ipanel_rv_color" rows="6" class="large-text" placeholder="rich-maple=1.05,0.95,1.00">'
            . esc_textarea(get_option('ipanel_rv_color','')) . '</textarea>';
         echo '<p>One per line: slug=brightness,saturate,contrast (from the visualizer sliders).</p>';
-        submit_button(); echo '</form></div>';
+        submit_button();
+        if (class_exists('iPanel_UGC')) { iPanel_UGC::admin_list(); }
+        echo '</form></div>';
     }
     public static function render($atts) {
         wp_enqueue_style('ipanel-rv', IPANEL_VISUALIZER_URL . 'assets/css/visualizer.css', [], IPANEL_VISUALIZER_VERSION);

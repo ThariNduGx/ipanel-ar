@@ -65,3 +65,8 @@ Full wizard Android+iPhone; console clean; our JS/CSS separate in Network; /ar-t
 4. UGC gallery with consent + moderation (REST pending/approved, admin approve UI).
 5. Factory-artwork intake: per-finish 3.05m print → regenerate textures (removes mirror chevron).
 6. Live-AR promotion decision from WebXR go/no-go.
+
+## Deep-research disposition (Phase 4 close)
+Adopted now: line-fit quad (mask boundary lines -> corner intersections), door-prior auto-scale (2.0m) with override, contact-shadow layer, privacy trust line, rAF-throttled drag, NSFWJS client gate on UGC.
+Phase 5 strategic: metric depth (Metric3D/Depth-Anything-metric) to remove manual measurement; depth-based occlusion; WebGL2 compositor with mipmaps + normal-map grooves; ONNX Runtime Web evaluation; i18n (si/ta); cut-list/waste installer tool.
+Rejected: LayoutNet/RoomNet, HarmonyNet/Poisson (license+weight risk), OpenCV.js WASM (line-fit covers need).
