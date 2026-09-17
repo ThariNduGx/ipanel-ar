@@ -41,7 +41,7 @@ def main():
     mp = nt.nodes.new('ShaderNodeMapping'); tc = nt.nodes.new('ShaderNodeTexCoord')
     ltex = img.size[0]/side['px_per_mm']/1000.0
     wtex = side['face_height_px']/side['px_per_mm']/1000.0
-    mp.inputs['Scale'].default_value = (1.0/ltex, 1.0/wtex, 1.0)
+    mp.inputs['Scale'].default_value = (1.0/L, 1.0/wtex, 1.0)
     nt.links.new(tc.outputs['UV'], mp.inputs['Vector']); nt.links.new(mp.outputs['Vector'], tex.inputs['Vector'])
     nt.links.new(tex.outputs['Color'], bsdf.inputs['Base Color'])
     bsdf.inputs['Roughness'].default_value = 0.6
