@@ -34,7 +34,7 @@ function init(root){
  +'<div data-p4 class="rv-hide"><div class="rv-title">Your new look</div>'
  +'<div class="rv-field">Before / After <input type="range" data-ba min="0" max="100" value="100"></div>'
  +'<div class="rv-coverage"></div>'
- +'<div class="rv-btnrow"><button class="rv-btn" data-share>Share on WhatsApp</button><button class="rv-btn ghost" data-cart>Add boxes to cart</button></div><div class="rv-btnrow"><button class="rv-btn ghost" data-live>Live AR (Android, beta)</button></div><div class="rv-btnrow"><button class="rv-btn ghost" data-restart>Start over</button></div></div>'
+ +'<div class="rv-btnrow"><button class="rv-btn" data-share>Share on WhatsApp</button><button class="rv-btn ghost" data-cart>Add boxes to cart</button></div><div class="rv-btnrow"><button class="rv-btn ghost" data-live>Live AR (Android, beta)</button></div><div class="rv-btnrow"><button class="rv-btn ghost" data-live>Live AR (Android, beta)</button></div><div class="rv-btnrow"><button class="rv-btn ghost" data-restart>Start over</button></div></div>'
  +'</div>'
  +'<div class="rv-nav"><button class="rv-btn ghost" data-back>Back</button><button class="rv-btn" data-next>Next</button></div>'
  +'</div>';
@@ -72,6 +72,9 @@ function init(root){
    ev('rv_share',{finish:f.slug});
   }catch(e){ console.error(e); alert('Share failed: '+e.message); }
  };
+ const liveOk=(root.dataset.livear==='1')&&/Android/i.test(navigator.userAgent)&&('xr' in navigator);
+ q('[data-live]').style.display=liveOk?'block':'none';
+ q('[data-live]').onclick=()=>{const f=FIN[S.fin];location.href='/webxr-clad.html?fin='+f.slug+'&w='+(S.ww||3)+'&h=2.4&vert='+(S.vert?1:0);};
  const liveOk=(root.dataset.livear==='1')&&/Android/i.test(navigator.userAgent)&&('xr' in navigator);
  q('[data-live]').style.display=liveOk?'block':'none';
  q('[data-live]').onclick=()=>{const f=FIN[S.fin];location.href='/webxr-clad.html?fin='+f.slug+'&w='+(S.ww||3)+'&h=2.4&vert='+(S.vert?1:0);};
