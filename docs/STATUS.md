@@ -39,3 +39,16 @@
 
 ## QA checklist (each release)
 Full wizard Android+iPhone; console clean; our JS/CSS separate in Network; /ar-test/ ok; coverage sane; share+cart ok; PSI no regression.
+
+## Hardening (Phase 3 close)
+- Error boundary: init try/catch → friendly fallback card with contact links.
+- a11y: prefers-reduced-motion, focus-visible outlines, aria-live detect status, keyboard-nudge handles.
+- Payload: swatch thumbs 160px; print textures 1000px q80; mirror tiles retained. Textures zip: ipanel-textures.zip.
+
+## Phase 4 growth plan (next)
+1. Visualizer on every product page via Elementor single-product template (finish preselected from product).
+2. SEO/structured data: Product + ImageObject + VideoObject/3DModel (model-viewer schema) for AR/3D assets.
+3. GA4 funnel dashboard ownership (docs/GA4-FUNNEL.md) + A/B readout at ≥500 sessions/side.
+4. UGC gallery with consent + moderation (REST pending/approved folders, admin approve UI).
+5. Factory-artwork intake: per-finish 3.05m print → regenerate textures (removes mirror chevron).
+6. Live-AR promotion decision from WebXR go/no-go.

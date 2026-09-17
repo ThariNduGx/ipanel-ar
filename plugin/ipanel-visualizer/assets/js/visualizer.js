@@ -17,7 +17,7 @@ function init(root){
  +'<div class="rv-steps"><span data-s1>1 Photo</span><span data-s2>2 Surface</span><span data-s3>3 Finish</span><span data-s4>4 Result</span></div>'
  +'<div class="rv-stage rv-hide"><img class="rv-photo" alt=""><div class="rv-clad"><div class="rv-print"></div><div class="rv-grooves"></div><div class="rv-shade"></div></div>'
  +'<div class="rv-occl"></div>'
- +'<svg class="rv-quad"><polygon fill="none" stroke="#0b5cff" stroke-width="2"/></svg></div>'
+ +'<svg class="rv-quad"><polygon fill="none" stroke="#0b5cff" stroke-width="2"/></svg>'+'<div class="rv-wipe"><i>⟷</i></div>'+'<div class="rv-brand"><span class="rv-bname"></span><span class="rv-burl">ipanel.lk</span><img class="rv-bqr" alt=""></div></div>'
  +'<div class="rv-sheet">'
  +'<div data-p1><div class="rv-title">Show it on YOUR space</div>'
  +'<div class="rv-btnrow"><button class="rv-btn" data-cam>Take photo</button><button class="rv-btn ghost" data-up>Upload</button></div>'
@@ -32,17 +32,18 @@ function init(root){
  +'<div data-p3 class="rv-hide"><div class="rv-title">Pick your finish</div><div class="rv-swatches"></div>'
  +'<div class="rv-field"><label><input type="checkbox" data-horiz> slats horizontal</label></div></div>'
  +'<div data-p4 class="rv-hide"><div class="rv-title">Your new look</div>'
- +'<div class="rv-field">Before / After <input type="range" data-ba min="0" max="100" value="100"></div>'
+ +'<div class="rv-field" style="font-size:12px">Drag the white line on the image to compare · swipe the photo to try other finishes</div>'
  +'<div class="rv-coverage"></div>'
  +'<div class="rv-btnrow"><button class="rv-btn" data-share>Share on WhatsApp</button><button class="rv-btn ghost" data-cart>Add boxes to cart</button></div><div class="rv-btnrow"><button class="rv-btn ghost" data-live>Live AR (Android, beta)</button></div><div class="rv-btnrow"><button class="rv-btn ghost" data-live>Live AR (Android, beta)</button></div><div class="rv-btnrow"><button class="rv-btn ghost" data-restart>Start over</button></div></div>'
  +'</div>'
  +'<div class="rv-nav"><button class="rv-btn ghost" data-back>Back</button><button class="rv-btn" data-next>Next</button></div>'
  +'</div>';
  const q=s=>root.querySelector(s), qa=s=>[...root.querySelectorAll(s)];
- const stage=q('.rv-stage'),photo=q('.rv-photo'),clad=q('.rv-clad'),pr=q('.rv-print'),gr=q('.rv-grooves'),sh=q('.rv-shade'),occl=q('.rv-occl'),poly=q('.rv-quad polygon');
+ const stage=q('.rv-stage'),photo=q('.rv-photo'),clad=q('.rv-clad'),pr=q('.rv-print'),gr=q('.rv-grooves'),sh=q('.rv-shade'),occl=q('.rv-occl'),poly=q('.rv-quad polygon'),wipe=q('.rv-wipe'),brand=q('.rv-brand');
+ q('[data-dstatus]').setAttribute('aria-live','polite');
  const handles=[0,1,2,3].map(i=>{const d=document.createElement('div');d.className='rv-h';stage.appendChild(d);return d;});
  const swWrap=q('.rv-swatches');
- FIN.forEach((f,i)=>{const d=document.createElement('div');d.className='rv-sw'+(i===0?' on':'');d.innerHTML='<i style="background-image:url('+TEX+f.slug+'/visualizer.webp)"></i>'+f.name;
+ FIN.forEach((f,i)=>{const d=document.createElement('div');d.className='rv-sw'+(i===0?' on':'');d.innerHTML='<i style="background-image:url('+TEX+f.slug+'/visualizer-thumb.webp)"></i>'+f.name;
   d.onclick=()=>{S.fin=i;qa('.rv-sw').forEach((e,j)=>e.classList.toggle('on',j===i));update();};swWrap.appendChild(d);});
  const samWrap=q('.rv-samples');
  samples.forEach(u=>{const im=document.createElement('img');im.src=u;im.onclick=()=>setPhoto(u);samWrap.appendChild(im);});
@@ -55,14 +56,28 @@ function init(root){
  q('[data-horiz]').onchange=e=>{S.vert=!e.target.checked;update();};
  q('[data-ww]').oninput=e=>{S.ww=+e.target.value||3;update();};
  q('[data-reset]').onclick=()=>{clearMask();q('[data-dstatus]').textContent='Mask cleared.';};
- q('[data-ba]').oninput=e=>{S.ba=+e.target.value;clad.style.clipPath='inset(0 '+(100-S.ba)+'% 0 0)';};
+ function applyBA(){clad.style.clipPath='inset(0 '+(100-S.ba)+'% 0 0)';wipe.style.left=S.ba+'%';}
+ let wdrag=false;
+ wipe.addEventListener('pointerdown',e=>{wdrag=true;wipe.setPointerCapture(e.pointerId);e.stopPropagation();});
+ wipe.addEventListener('pointermove',e=>{if(!wdrag)return;const r=stage.getBoundingClientRect();S.ba=Math.max(0,Math.min(100,(e.clientX-r.left)/r.width*100));applyBA();});
+ wipe.addEventListener('pointerup',()=>wdrag=false);
+ let pd=null;
+ stage.addEventListener('pointerdown',e=>{pd=[e.clientX,e.clientY];});
+ stage.addEventListener('pointerup',e=>{if(!pd)return;const dx=e.clientX-pd[0],dy=e.clientY-pd[1];pd=null;
+  if(e.target===wipe||wipe.contains(e.target))return;
+  if(S.step>=3&&Math.abs(dx)>60&&Math.abs(dy)<40){const d=dx<0?1:-1;S.fin=(S.fin+d+FIN.length)%FIN.length;
+   qa('.rv-sw').forEach((el,j2)=>el.classList.toggle('on',j2===S.fin));loadCol();loadVariations();update();}});
  q('[data-restart]').onclick=()=>{stage.classList.add('rv-hide');clearMask();go(1);};
  q('[data-share]').onclick=async()=>{
   try{
    if(!window.domtoimage){ await new Promise((res,rej)=>{const sc=document.createElement('script');
      sc.src='https://cdn.jsdelivr.net/npm/dom-to-image-more@3.4.5/dist/dom-to-image-more.min.js';
      sc.onload=res; sc.onerror=rej; document.head.appendChild(sc);}); }
+   brand.style.display='flex'; q('.rv-bname').textContent='iPanel '+f.name;
+   try{ if(!window.QRCode){ await new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';sc.onload=res;sc.onerror=rej;document.head.appendChild(sc);}); }
+     q('.rv-bqr').src=await window.QRCode.toDataURL(location.href,{width:128,margin:0}); }catch(e){ q('.rv-bqr').style.display='none'; }
    const blob=await window.domtoimage.toBlob(stage,{bgcolor:'#ffffff'});
+   brand.style.display='none';
    const f=FIN[S.fin];
    const text='See my wall with iPanel '+f.name+'! Visualize yours: '+location.href;
    const file=new File([blob],'ipanel-visual.png',{type:'image/png'});
@@ -70,7 +85,7 @@ function init(root){
    else{ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='ipanel-visual.png'; a.click();
          window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank'); }
    ev('rv_share',{finish:f.slug});
-  }catch(e){ console.error(e); alert('Share failed: '+e.message); }
+  }catch(e){ brand.style.display='none'; console.error(e); alert('Share failed: '+e.message); }
  };
  const liveOk=(root.dataset.livear==='1')&&/Android/i.test(navigator.userAgent)&&('xr' in navigator);
  q('[data-live]').style.display=liveOk?'block':'none';
@@ -144,6 +159,7 @@ function init(root){
   q('[data-back]').style.visibility=S.step>1?'visible':'hidden';
   q('[data-next]').style.visibility=S.step<4?'visible':'hidden';
   handles.forEach(h=>h.style.display=(S.step===2)?'block':'none');
+  wipe.style.display=(S.step===4)?'block':'none';
   poly.style.display=(S.step===2)?'block':'none';
   if(S.step===4)coverage(); update();}
  function coverage(){const R=ring(S.C,S.W,S.H);const ppm=S.W/S.ww;
@@ -173,7 +189,7 @@ function init(root){
   sh.style.clipPath='polygon('+R.map(p=>p.map(v=>v+'px').join(' ')).join(',')+')';
   sh.style.backgroundImage=S.photo?('url('+S.photo+')'):'none'; sh.style.backgroundSize='100% 100%';
   sh.style.display=S.shade?'block':'none';
-  clad.style.clipPath='inset(0 '+(100-S.ba)+'% 0 0)';
+  applyBA();
   ev('rv_update',{finish:f.slug,surface:S.surface});}
  let drag=-1;
  handles.forEach((h,i)=>{h.addEventListener('pointerdown',e=>{drag=i;h.setPointerCapture(e.pointerId);});
@@ -182,5 +198,6 @@ function init(root){
   h.addEventListener('pointerup',()=>drag=-1);});
  go(1);
 }
-document.addEventListener('DOMContentLoaded',()=>document.querySelectorAll('.ipanel-rv').forEach(init));
+document.addEventListener('DOMContentLoaded',()=>document.querySelectorAll('.ipanel-rv').forEach(r=>{try{init(r);}catch(e){console.error(e);
+ r.innerHTML='<div class="rv-card" style="padding:18px">The visualizer could not start on this device. <a href="/contact/">Contact us</a> or WhatsApp iPanel for a free visualisation.</div>';}}));
 })();
