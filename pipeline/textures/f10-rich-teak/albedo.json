@@ -1,0 +1,7 @@
+{
+  "source": "source.jpg",
+  "pitch_px": 75,
+  "px_per_mm": 2.5,
+  "groove_center_px": 67,
+  "face_height_px": 675
+}

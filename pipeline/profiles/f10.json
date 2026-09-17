@@ -1,0 +1,20 @@
+{
+  "profile": "f10",
+  "revision": 2,
+  "overall_width_mm": 300,
+  "effective_width_mm": 290,
+  "thickness_mm": 7.5,
+  "lengths_mm": [3050, 3660],
+  "panels_per_box": 10,
+  "slats": {
+    "count": 10,
+    "slat_width_mm": 26.4,
+    "groove_width_mm": 4.0,
+    "groove_depth_mm": 2.5,
+    "groove_finish": "core",
+    "core_color_hex": "#141414",
+    "core_roughness": 0.6
+  },
+  "joint": { "type": "mid-height tongue-groove", "loss_mm": 10 },
+  "budgets": { "glb_max_mb": 3, "usdz_max_mb": 10, "max_tris": 100000, "max_meshes": 50 }
+}
