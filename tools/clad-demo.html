@@ -1,0 +1,89 @@
+<!doctype html><html><head><meta charset="utf-8"><title>iPanel Room Visualizer (demo)</title>
+<style>
+ body{font:14px system-ui;margin:20px;background:#141414;color:#eee}
+ #help{max-width:900px;background:#1e2a38;border:1px solid #2a3f55;border-radius:8px;padding:10px 14px;margin-bottom:14px;line-height:1.5}
+ #stage{position:relative;display:inline-block;border:1px solid #444;touch-action:none}
+ #stage img{display:block;width:100%}
+ #panel,#shade{position:absolute;inset:0;pointer-events:none}
+ #panel{transform-origin:0 0;background-repeat:repeat}
+ #grooves{position:absolute;inset:0;pointer-events:none;transform-origin:0 0}
+ #shade{mix-blend-mode:soft-light;filter:grayscale(1) contrast(1.15)}
+ #q{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+ .h{position:absolute;width:34px;height:34px;margin:-17px;border-radius:50%;background:#0af;border:3px solid #fff;cursor:grab;z-index:9;font:13px/28px #fff;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.5)}
+ .row{margin:10px 0} label{margin-right:16px}
+ #err{color:#f66;margin-top:8px}
+</style></head><body>
+<h3>iPanel Room Visualizer — demo</h3>
+<div id="help"><b>How to use:</b> 1) Load a photo of your wall / ceiling / floor. 2) Drag the four blue dots onto the four corners of that surface (any order). 3) Type the real width of the surface's <b>top edge</b> in metres. 4) Pick a finish. Use <b>rotate</b> if the slats run the wrong way. <b>Before/After</b> compares against the original photo.</div>
+<div class="row">
+ <label>Room photo: <input type="file" id="photo" accept="image/*"></label>
+ <label>Finish: <select id="finish"><option value="rich-brown">Rich Brown</option><option value="rich-teak">Rich Teak</option><option value="rich-maple">Rich Maple</option><option value="gray-marble">Gray Marble</option><option value="black-marble">Black Marble</option></select></label>
+</div>
+<div class="row">
+ <label>Top-edge width (m): <input type="number" id="ww" value="3" step="0.1" style="width:70px"></label>
+ <label>Surface: <select id="surface"><option value="wall">Wall (vertical slats)</option><option value="ceiling">Ceiling</option><option value="floor">Floor</option></select></label>
+ <label><input type="checkbox" id="horiz"> slats horizontal</label>
+ <label><input type="checkbox" id="shadeOn" checked> room shading</label>
+ <label><input type="checkbox" id="after" checked> After (show panels)</label>
+</div>
+<div id="stage"><img id="room" alt="room"><div id="panel"></div><div id="grooves"></div><div id="shade"></div>
+ <svg id="q"><polygon id="qp" fill="none" stroke="#0af" stroke-width="2"/></svg></div>
+<div id="err"></div>
+<script>
+const stage=document.getElementById('stage'),room=document.getElementById('room'),
+ panel=document.getElementById('panel'),shade=document.getElementById('shade'),grooves=document.getElementById('grooves'),
+ qp=document.getElementById('qp'),err=document.getElementById('err');
+let W=0,H=0,ww=3,vert=true,slug='rich-brown',TL=1.215,TH=0.30,photoURL='';
+let C=[[0.15,0.2],[0.85,0.2],[0.85,0.8],[0.15,0.8]];
+const handles=C.map((_,i)=>{const d=document.createElement('div');d.className='h';d.textContent=i+1;stage.appendChild(d);return d;});
+function solve8(A,b){for(let i=0;i<8;i++){let p=i;for(let r=i+1;r<8;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;
+[A[i],A[p]]=[A[p],A[i]];const t=b[i];b[i]=b[p];b[p]=t;const pv=A[i][i]||1e-12;
+for(let r=0;r<8;r++){if(r===i)continue;const f=A[r][i]/pv;for(let c=i;c<8;c++)A[r][c]-=f*A[i][c];b[r]-=f*b[i];}}
+return b.map((v,i)=>v/(A[i][i]||1e-12));}
+function ring(){const px=C.map(c=>[c[0]*W,c[1]*H]);const cx=px.reduce((s,p)=>s+p[0],0)/4,cy=px.reduce((s,p)=>s+p[1],0)/4;
+let r=px.map(p=>({p,a:Math.atan2(p[1]-cy,p[0]-cx)})).sort((u,v)=>u.a-v.a).map(o=>o.p);
+let k=0;for(let i=1;i<4;i++)if(r[i][0]+r[i][1]<r[k][0]+r[k][1])k=i;return r.slice(k).concat(r.slice(0,k));}
+function update(){err.textContent='';try{
+ const R=ring();
+ handles.forEach((h,i)=>{h.style.left=C[i][0]*W+'px';h.style.top=C[i][1]*H+'px';});
+ qp.setAttribute('points',R.map(p=>p.join(',')).join(' '));
+ const S=[[0,0],[W,0],[W,H],[0,H]],A=[],b=[];
+ for(let i=0;i<4;i++){const[xs,ys]=S[i],[xd,yd]=R[i];
+  A.push([xs,ys,1,0,0,0,-xs*xd,-ys*xd]);b.push(xd);
+  A.push([0,0,0,xs,ys,1,-xs*yd,-ys*yd]);b.push(yd);}
+ const s=solve8(A,b);
+ const tf=`matrix3d(${s[0]},${s[3]},0,${s[6]},${s[1]},${s[4]},0,${s[7]},0,0,1,0,${s[2]},${s[5]},0,1)`;
+ panel.style.transform=tf;
+ const ppm=W/ww;
+ panel.style.backgroundSize=vert?`${TH*ppm}px ${TL*ppm}px`:`${TL*ppm}px ${TH*ppm}px`;
+ grooves.style.transform=tf;
+ const pp=0.030*ppm, gp=Math.max(1,0.004*ppm), jp=0.290*ppm, jtp=Math.max(1.5,0.006*ppm), ejp=3.050*ppm, ejt=Math.max(1,0.003*ppm);
+ const ax=vert?'to right':'to bottom', ay=vert?'to bottom':'to right';
+ grooves.style.backgroundImage=
+  `repeating-linear-gradient(${ax}, rgba(0,0,0,.85) 0 ${gp}px, rgba(255,255,255,.15) ${gp}px ${gp+1}px, transparent ${gp+1}px ${pp}px),`+
+  `repeating-linear-gradient(${ax}, rgba(0,0,0,.95) 0 ${jtp}px, transparent ${jtp}px ${jp}px),`+
+  `repeating-linear-gradient(${ay}, rgba(0,0,0,.8) 0 ${ejt}px, transparent ${ejt}px ${ejp}px)`;
+ shade.style.clipPath=`polygon(${R.map(p=>p.map(v=>v+'px').join(' ')).join(',')})`;
+ shade.style.backgroundImage=photoURL?`url(${photoURL})`:'none';
+ shade.style.backgroundSize='100% 100%';
+ const show=document.getElementById('after').checked;
+ panel.style.display=show?'block':'none';
+ grooves.style.display=show?'block':'none';
+ shade.style.display=(show&&document.getElementById('shadeOn').checked)?'block':'none';
+}catch(e){err.textContent='Error: '+e.message;console.error(e);}}
+function setFinish(slug){panel.style.backgroundImage=`url(../pipeline/textures/${slug}/visualizer${vert?'-rot':''}.webp)`;}
+document.getElementById('finish').onchange=e=>setFinish(e.target.value);
+document.getElementById('photo').onchange=e=>{const f=e.target.files[0];if(!f)return;
+ photoURL=URL.createObjectURL(f);
+ room.onload=()=>{W=stage.clientWidth;H=stage.clientHeight;update();};room.src=photoURL;};
+document.getElementById('horiz').onchange=e=>{vert=!e.target.checked;setFinish(slug);update();};
+document.getElementById('surface').onchange=e=>{vert=(e.target.value==='wall');document.getElementById('horiz').checked=!vert;setFinish(slug);update();};
+['ww','shadeOn','after'].forEach(id=>{const el=document.getElementById(id);
+ el.addEventListener('input',()=>{if(id==='ww')ww=+el.value||3;update();});});
+let drag=-1;
+handles.forEach((h,i)=>{h.addEventListener('pointerdown',ev=>{drag=i;h.setPointerCapture(ev.pointerId);});
+ h.addEventListener('pointermove',ev=>{if(drag!==i)return;const r=stage.getBoundingClientRect();
+  C[i]=[(ev.clientX-r.left)/W,(ev.clientY-r.top)/H];update();});
+ h.addEventListener('pointerup',()=>drag=-1);});
+setFinish('rich-brown');
+</script></body></html>

@@ -31,6 +31,9 @@ def main():
     bpy.context.view_layer.objects.active = ob; ob.select_set(True)
     bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.mesh.normals_make_consistent(inside=False); bpy.ops.object.mode_set(mode='OBJECT')
+    xs=[v.co.x for v in me.vertices]; ys=[v.co.y for v in me.vertices]; zs=[v.co.z for v in me.vertices]
+    cx=(min(xs)+max(xs))/2; cy=(min(ys)+max(ys))/2; cz=(min(zs)+max(zs))/2
+    for v in me.vertices: v.co.x-=cx; v.co.y-=cy; v.co.z-=cz
     # materials: slot0 face albedo, slot1 core
     td = BASE/'textures'/slug
     side = json.loads((td/'albedo.json').read_text())
@@ -41,7 +44,7 @@ def main():
     mp = nt.nodes.new('ShaderNodeMapping'); tc = nt.nodes.new('ShaderNodeTexCoord')
     ltex = img.size[0]/side['px_per_mm']/1000.0
     wtex = side['face_height_px']/side['px_per_mm']/1000.0
-    mp.inputs['Scale'].default_value = (1.0/L, 1.0/wtex, 1.0)
+    mp.inputs['Scale'].default_value = (1.0, 1.0, 1.0)
     nt.links.new(tc.outputs['UV'], mp.inputs['Vector']); nt.links.new(mp.outputs['Vector'], tex.inputs['Vector'])
     nt.links.new(tex.outputs['Color'], bsdf.inputs['Base Color'])
     bsdf.inputs['Roughness'].default_value = 0.6
@@ -53,20 +56,20 @@ def main():
     uvl = me.uv_layers.new(name='UVMap')
     for poly in me.polygons:
         zc = sum(me.vertices[v].co.z for v in poly.vertices)/len(poly.vertices)
-        is_face = poly.normal.z > 0.9 and abs(zc - t) < 1e-6
+        is_face = poly.normal.z > 0.9 and abs(zc - t/2) < 1e-6
         poly.material_index = 0 if is_face else 1
         for li in poly.loop_indices:
             co = me.vertices[me.loops[li].vertex_index].co
-            uvl.data[li].uv = (co.y, co.x)
+            uvl.data[li].uv = (co.y / L, co.x / W)
     me.calc_loop_triangles(); tris = len(me.loop_triangles)
     out = BASE/'output'; out.mkdir(exist_ok=True)
     glb = str(out/f'{P["profile"]}-{slug}-{Lmm}.glb')
     try:
         bpy.ops.export_scene.gltf(filepath=glb, export_format='GLB', use_selection=True,
-            export_draco_mesh_compression_enable=True, export_image_format='WEBP')
+            export_draco_mesh_compression_enable=False, export_image_format='PNG')
     except TypeError:
         bpy.ops.export_scene.gltf(filepath=glb, export_format='GLB', use_selection=True,
-            export_draco_mesh_compression_enable=True)
+            export_draco_mesh_compression_enable=False)
     usdz = str(out/f'{P["profile"]}-{slug}-{Lmm}.usdz')
     try:
         bpy.ops.wm.usd_export(filepath=usdz, export_textures=True, export_materials=True)

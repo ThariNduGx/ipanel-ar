@@ -10,7 +10,7 @@ async function init(container) {
         mv.setAttribute('src', container.dataset.glb);
         if (container.dataset.usdz) { mv.setAttribute('ios-src', container.dataset.usdz); }
         mv.setAttribute('ar', '');
-        mv.setAttribute('ar-modes', 'webxr scene-viewer quick-look');
+        mv.setAttribute('ar-modes', 'scene-viewer quick-look');
         mv.setAttribute('ar-placement', 'wall');
         mv.setAttribute('camera-controls', '');
         mv.setAttribute('auto-rotate', '');

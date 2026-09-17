@@ -1,0 +1,84 @@
+<!doctype html><html><head><meta charset="utf-8"><title>iPanel compositor</title>
+<style>body{font:14px system-ui;margin:20px;background:#111;color:#eee}
+#stage{position:relative;display:inline-block;border:1px solid #444}
+canvas{display:block}
+#q{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.h{position:absolute;width:30px;height:30px;margin:-15px;border-radius:50%;background:#0af;border:3px solid #fff;cursor:grab;z-index:9;font:12px/24px #fff;text-align:center}
+.row{margin:10px 0}label{margin-right:14px}</style></head><body>
+<h3>iPanel compositor — true colour, crisp grooves, room shading</h3>
+<div class="row"><label>Room photo: <input type="file" id="photo" accept="image/*"></label>
+<label>Finish: <select id="finish"><option value="rich-brown">Rich Brown</option><option value="rich-teak">Rich Teak</option><option value="rich-maple">Rich Maple</option><option value="gray-marble">Gray Marble</option><option value="black-marble">Black Marble</option></select></label></div>
+<div class="row"><label>Top-edge width (m): <input type="number" id="ww" value="3" step="0.1" style="width:70px"></label>
+<label><input type="checkbox" id="rot"> rotate 90°</label>
+<label><input type="checkbox" id="shade" checked> room shading</label>
+<button id="dl">Download result</button></div>
+<div id="stage"><canvas id="out"></canvas><svg id="q"><polygon id="qp" fill="none" stroke="#0af" stroke-width="2"/></svg></div>
+<script>
+const out=document.getElementById('out'),ctx=out.getContext('2d'),qp=document.getElementById('qp'),stage=document.getElementById('stage');
+let W=0,H=0,ww=3,rot=false,shadeOn=true,tile=null,TL=1.215,TH=0.30;
+let C=[[0.15,0.2],[0.85,0.2],[0.85,0.8],[0.15,0.8]];
+const photo=document.createElement('canvas'),pc=photo.getContext('2d');
+const handles=C.map((_,i)=>{const d=document.createElement('div');d.className='h';d.textContent=i+1;stage.appendChild(d);return d;});
+function solve8(A,b){for(let i=0;i<8;i++){let p=i;for(let r=i+1;r<8;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;
+[A[i],A[p]]=[A[p],A[i]];const t=b[i];b[i]=b[p];b[p]=t;const pv=A[i][i]||1e-12;
+for(let r=0;r<8;r++){if(r===i)continue;const f=A[r][i]/pv;for(let c=i;c<8;c++)A[r][c]-=f*A[i][c];b[r]-=f*b[i];}}
+return b.map((v,i)=>v/(A[i][i]||1e-12));}
+function ring(){const px=C.map(c=>[c[0]*W,c[1]*H]);const cx=px.reduce((s,p)=>s+p[0],0)/4,cy=px.reduce((s,p)=>s+p[1],0)/4;
+let r=px.map(p=>({p,a:Math.atan2(p[1]-cy,p[0]-cx)})).sort((u,v)=>u.a-v.a).map(o=>o.p);
+let k=0;for(let i=1;i<4;i++)if(r[i][0]+r[i][1]<r[k][0]+r[k][1])k=i;return r.slice(k).concat(r.slice(0,k));}
+function tri(img,s0,s1,s2,d0,d1,d2){const den=(s0[0]-s2[0])*(s1[1]-s2[1])-(s1[0]-s2[0])*(s0[1]-s2[1]);if(!den)return;
+const a=((d0[0]-d2[0])*(s1[1]-s2[1])-(d1[0]-d2[0])*(s0[1]-s2[1]))/den,
+c=((d1[0]-d2[0])*(s0[0]-s2[0])-(d0[0]-d2[0])*(s1[0]-s2[0]))/den,
+b=((d0[1]-d2[1])*(s1[1]-s2[1])-(d1[1]-d2[1])*(s0[1]-s2[1]))/den,
+d=((d1[1]-d2[1])*(s0[0]-s2[0])-(d0[1]-d2[1])*(s1[0]-s2[0]))/den,
+e=d2[0]-a*s2[0]-c*s2[1],f=d2[1]-b*s2[0]-d*s2[1];
+ctx.save();ctx.beginPath();ctx.moveTo(d0[0],d0[1]);ctx.lineTo(d1[0],d1[1]);ctx.lineTo(d2[0],d2[1]);ctx.closePath();ctx.clip();
+ctx.transform(a,b,c,d,e,f);ctx.drawImage(img,0,0);ctx.restore();}
+function buildWall(){const pxm=Math.min(500,2000/ww);const Wm=ww,Hm=ww*0.75;
+const wc=document.createElement('canvas');wc.width=Math.round(Wm*pxm);wc.height=Math.round(Hm*pxm);const g=wc.getContext('2d');
+const tw=(rot?TH:TL)*pxm,th=(rot?TL:TH)*pxm;
+for(let y=0;y<wc.height;y+=th)for(let x=0;x<wc.width;x+=tw){g.save();g.translate(x,y);if(rot)g.rotate(Math.PI/2);g.drawImage(tile,0,0,tw,th);g.restore();}
+return {wc,pxm,Wm,Hm};}
+function render(){if(!W||!tile)return;ctx.clearRect(0,0,W,H);ctx.drawImage(photo,0,0);
+const R=ring();handles.forEach((h,i)=>{h.style.left=C[i][0]*W+'px';h.style.top=C[i][1]*H+'px';});
+qp.setAttribute('points',R.map(p=>p.join(',')).join(' '));
+const {wc,pxm}=buildWall();const SW=wc.width,SH=wc.height;
+const S=[[0,0],[SW,0],[SW,SH],[0,SH]],A=[],b=[];
+for(let i=0;i<4;i++){const[xs,ys]=S[i],[xd,yd]=R[i];
+A.push([xs,ys,1,0,0,0,-xs*xd,-ys*xd]);b.push(xd);A.push([0,0,0,xs,ys,1,-xs*yd,-ys*yd]);b.push(yd);}
+const h8=solve8(A,b);const map=(x,y)=>{const w=h8[6]*x+h8[7]*y+1;return[(h8[0]*x+h8[1]*y+h8[2])/w,(h8[3]*x+h8[4]*y+h8[5])/w];};
+const warp=document.createElement('canvas');warp.width=W;warp.height=H;const wx=warp.getContext('2d');
+const old=ctx;window.__c=ctx;const N=18;const grid=[];
+for(let j=0;j<=N;j++){grid[j]=[];for(let i=0;i<=N;i++)grid[j][i]=map(i/N*SW,j/N*SH);}
+const save=ctx;const wctx=wx;
+function T(s0,s1,s2,d0,d1,d2){const den=(s0[0]-s2[0])*(s1[1]-s2[1])-(s1[0]-s2[0])*(s0[1]-s2[1]);if(!den)return;
+const a=((d0[0]-d2[0])*(s1[1]-s2[1])-(d1[0]-d2[0])*(s0[1]-s2[1]))/den,c=((d1[0]-d2[0])*(s0[0]-s2[0])-(d0[0]-d2[0])*(s1[0]-s2[0]))/den,
+bb=((d0[1]-d2[1])*(s1[1]-s2[1])-(d1[1]-d2[1])*(s0[1]-s2[1]))/den,dd=((d1[1]-d2[1])*(s0[0]-s2[0])-(d0[1]-d2[1])*(s1[0]-s2[0]))/den,
+e=d2[0]-a*s2[0]-c*s2[1],f=d2[1]-bb*s2[0]-dd*s2[1];
+wctx.save();wctx.beginPath();wctx.moveTo(d0[0],d0[1]);wctx.lineTo(d1[0],d1[1]);wctx.lineTo(d2[0],d2[1]);wctx.closePath();wctx.clip();
+wctx.transform(a,bb,c,dd,e,f);wctx.drawImage(wc,0,0);wctx.restore();}
+for(let j=0;j<N;j++)for(let i=0;i<N;i++){const s0=[i/N*SW,j/N*SH],s1=[(i+1)/N*SW,j/N*SH],s2=[(i+1)/N*SW,(j+1)/N*SH],s3=[i/N*SW,(j+1)/N*SH];
+T(s0,s1,s2,grid[j][i],grid[j][i+1],grid[j+1][i+1]);T(s0,s2,s3,grid[j][i],grid[j+1][i+1],grid[j+1][i]);}
+if(shadeOn){const small=document.createElement('canvas');small.width=W/8;small.height=H/8;small.getContext('2d').drawImage(photo,0,0,W/8,H/8);
+const blur=document.createElement('canvas');blur.width=W;blur.height=H;const bg=blur.getContext('2d');bg.imageSmoothingEnabled=true;bg.drawImage(small,0,0,W,H);
+const L=bg.getImageData(0,0,W,H).data,P=warp.getImageData(0,0,W,H);let m=0,n=0;
+for(let i=0;i<P.data.length;i+=4){if(P.data[i+3]>10){m+=0.299*L[i]+0.587*L[i+1]+0.114*L[i+2];n++;}}m/= (n||1);
+for(let i=0;i<P.data.length;i+=4){if(P.data[i+3]>10){const lum=0.299*L[i]+0.587*L[i+1]+0.114*L[i+2];
+const s=Math.max(0.35,Math.min(1.7,lum/m));P.data[i]*=s;P.data[i+1]*=s;P.data[i+2]*=s;}}
+warp.putImageData(P,0,0);}
+ctx.drawImage(warp,0,0);}
+function setFinish(slug){const im=new Image();im.src=`../pipeline/textures/${slug}/visualizer.webp`;
+im.onload=()=>{tile=im;render();};}
+document.getElementById('finish').onchange=e=>setFinish(e.target.value);
+document.getElementById('photo').onchange=e=>{const f=e.target.files[0];if(!f)return;const im=new Image();
+im.onload=()=>{const sc=Math.min(1,1000/im.naturalWidth);photo.width=W=Math.round(im.naturalWidth*sc);photo.height=H=Math.round(im.naturalHeight*sc);
+pc.drawImage(im,0,0,W,H);out.width=W;out.height=H;stage.style.width=W+'px';render();};im.src=URL.createObjectURL(f);};
+document.getElementById('ww').oninput=e=>{ww=+e.target.value||3;render();};
+document.getElementById('rot').onchange=e=>{rot=e.target.checked;render();};
+document.getElementById('shade').onchange=e=>{shadeOn=e.target.checked;render();};
+document.getElementById('dl').onclick=()=>{const a=document.createElement('a');a.download='ipanel-visual.png';a.href=out.toDataURL('image/png');a.click();};
+let drag=-1;handles.forEach((h,i)=>{h.addEventListener('pointerdown',ev=>{drag=i;h.setPointerCapture(ev.pointerId);});
+h.addEventListener('pointermove',ev=>{if(drag!==i)return;const r=stage.getBoundingClientRect();C[i]=[(ev.clientX-r.left)/W,(ev.clientY-r.top)/H];render();});
+h.addEventListener('pointerup',()=>drag=-1);});
+setFinish('rich-brown');
+</script></body></html>

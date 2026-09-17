@@ -1,0 +1,75 @@
+<!doctype html><html><head><meta charset="utf-8"><title>iPanel live AR clad (spike)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{margin:0;font:14px system-ui;background:#111;color:#eee}
+#ui{position:fixed;inset:0;pointer-events:none}
+#bar{position:absolute;left:0;right:0;bottom:0;padding:10px;display:flex;gap:8px;flex-wrap:wrap;pointer-events:auto;background:rgba(0,0,0,.55)}
+button,select,input{padding:10px;border-radius:10px;border:0;font-size:14px}
+#start{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:16px 26px;background:#0b5cff;color:#fff;font-size:16px;font-weight:700;border:0;border-radius:14px;pointer-events:auto}
+#msg{position:absolute;left:0;right:0;top:0;padding:10px;text-align:center;background:rgba(0,0,0,.5)}</style></head><body>
+<div id="ui"><div id="msg">Live AR clad spike — Android Chrome + ARCore only</div>
+<button id="start">Start live AR</button>
+<div id="bar" style="display:none">
+<select id="fin"><option>rich-brown</option><option>rich-teak</option><option>rich-maple</option><option>gray-marble</option><option>black-marble</option></select>
+<label>W<input id="w" type="number" value="3" step="0.1" style="width:60px"></label>
+<label>H<input id="h" type="number" value="2.4" step="0.1" style="width:60px"></label>
+<label><input id="vert" type="checkbox" checked> vertical slats</label>
+<button id="exit">Exit</button></div></div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+const TEX='/wp-content/uploads/ipanel-ar/textures/';
+let renderer,scene,camera,session,hitSource,reticle,clad=null;const tex={};
+const msg=document.getElementById('msg');
+const qp=new URLSearchParams(location.search);
+if(qp.get('fin'))document.getElementById('fin').value=qp.get('fin');
+if(qp.get('w'))document.getElementById('w').value=qp.get('w');
+if(qp.get('h'))document.getElementById('h').value=qp.get('h');
+if(qp.get('vert')==='0')document.getElementById('vert').checked=false;
+function texFor(slug,vert){const k=slug+(vert?'v':'h');if(!tex[k]){
+ const t=new THREE.TextureLoader().load(TEX+slug+'/visualizer'+(vert?'-rot':'')+'.webp');
+ t.wrapS=t.wrapT=THREE.RepeatWrapping;t.colorSpace=THREE.SRGBColorSpace;tex[k]=t;}return tex[k];}
+document.getElementById('start').onclick=async()=>{
+ try{
+  session=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:['hit-test'],optionalFeatures:['dom-overlay'],domOverlay:{root:document.getElementById('ui')}});
+ }catch(e){msg.textContent='WebXR AR unavailable: '+e.message;return;}
+ document.getElementById('start').style.display='none';
+ document.getElementById('bar').style.display='flex';
+ renderer=new THREE.WebGLRenderer({alpha:true,antialias:true});
+ renderer.xr.enabled=true; renderer.xr.setReferenceSpaceType('local');
+ await renderer.xr.setSession(session);
+ scene=new THREE.Scene(); camera=new THREE.PerspectiveCamera();
+ reticle=new THREE.Mesh(new THREE.RingGeometry(0.06,0.08,32).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({color:0x0b5cff}));
+ reticle.matrixAutoUpdate=false; reticle.visible=false; scene.add(reticle);
+ const viewer=await session.requestReferenceSpace('viewer');
+ hitSource=await session.requestHitTestSource({space:viewer});
+ session.addEventListener('select',place);
+ session.addEventListener('end',()=>{msg.textContent='Session ended';});
+ msg.textContent='Aim at a WALL until the blue ring sticks to it, then TAP to clad.';
+ renderer.setAnimationLoop(frame);
+};
+document.getElementById('exit').onclick=()=>session&&session.end();
+function frame(t,fr){
+ const hits=fr.getHitTestResults(hitSource);
+ if(hits.length){const pose=hits[0].getPose(renderer.xr.getReferenceSpace());
+  if(pose){reticle.visible=true;reticle.matrix.fromArray(pose.transform.matrix);}
+ } else reticle.visible=false;
+ renderer.render(scene,camera);
+}
+function place(){
+ if(!reticle.visible)return;
+ if(clad)scene.remove(clad);
+ const vert=document.getElementById('vert').checked;
+ const W=+document.getElementById('w').value||3, H=+document.getElementById('h').value||2.4;
+ const slug=document.getElementById('fin').value;
+ const t=texFor(slug,vert); t.repeat.set(vert?W/0.3:W/1.215, vert?H/1.215:H/0.3);
+ const m=new THREE.Matrix4().fromArray(reticle.matrix.elements);
+ const pos=new THREE.Vector3().setFromMatrixPosition(m);
+ let n=new THREE.Vector3(m.elements[4],0,m.elements[6]); if(n.length()<0.1)n.set(0,0,1); n.normalize();
+ const up=new THREE.Vector3(0,1,0);
+ const x=new THREE.Vector3().crossVectors(up,n).normalize();
+ const y=new THREE.Vector3().crossVectors(n,x).normalize();
+ const mm=new THREE.Matrix4().makeBasis(x,y,n); mm.setPosition(pos);
+ clad=new THREE.Mesh(new THREE.PlaneGeometry(W,H),new THREE.MeshBasicMaterial({map:t,side:THREE.DoubleSide}));
+ clad.matrixAutoUpdate=false; clad.matrix.copy(mm); scene.add(clad);
+ msg.textContent='Clad placed. Step back / move sideways — does it stay stuck to the wall?';
+}
+</script></body></html>
