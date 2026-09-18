@@ -1,0 +1,79 @@
+<!doctype html><html><head><meta charset="utf-8"><title>GL vs CSS clad bench</title>
+<style>body{font:14px system-ui;margin:16px;background:#111;color:#eee}
+#stage{position:relative;display:inline-block;border:1px solid #444;touch-action:none}
+#stage img{display:block;width:100%}
+#gl,#cssc{position:absolute;inset:0;pointer-events:none}
+#cssc{transform-origin:0 0;background-repeat:repeat}
+.h{position:absolute;width:30px;height:30px;margin:-15px;border-radius:50%;background:#0af;border:3px solid #fff;cursor:grab;z-index:9}
+.row{margin:8px 0}.row label{margin-right:12px}button{padding:8px 14px;margin-right:8px}</style></head><body>
+<h3>WebGL2 (mipmaps+aniso) vs CSS matrix3d — aliasing & fps bench</h3>
+<div class="row"><label>Photo <input type="file" id="photo" accept="image/*"></label>
+<label>Finish <select id="fin"><option>rich-brown</option><option>rich-teak</option><option>rich-maple</option><option>gray-marble</option><option>black-marble</option></select></label>
+<label>Width(m) <input id="ww" type="number" value="3" step="0.1" style="width:60px"></label></div>
+<div class="row"><button id="mgl">Mode: WebGL2</button><button id="bench">Bench 3s</button><span id="fps"></span></div>
+<div id="stage"><img id="room"><canvas id="gl"></canvas><div id="cssc"></div></div>
+<script>
+const TL=1.215,TH=0.30;
+let W=0,H=0,mode='gl',fin='rich-brown',ww=3,tex=null,tileImg=null;
+let C=[[.2,.25],[.8,.25],[.8,.8],[.2,.8]];
+const stage=document.getElementById('stage'),room=document.getElementById('room'),
+ cv=document.getElementById('gl'),cssc=document.getElementById('cssc'),fpsEl=document.getElementById('fps');
+const gl=cv.getContext('webgl2');
+const handles=C.map((_,i)=>{const d=document.createElement('div');d.className='h';stage.appendChild(d);return d;});
+function solve8(A,b){for(let i=0;i<8;i++){let p=i;for(let r=i+1;r<8;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;
+[A[i],A[p]]=[A[p],A[i]];const t=b[i];b[i]=b[p];b[p]=t;const pv=A[i][i]||1e-12;
+for(let r=0;r<8;r++){if(r===i)continue;const f=A[r][i]/pv;for(let c=i;c<8;c++)A[r][c]-=f*A[i][c];b[r]-=f*b[i];}}
+return b.map((v,i)=>v/(A[i][i]||1e-12));}
+function inv3(m){const[a,b,c,d,e,f,g,h,i]=m;const A=e*i-f*h,B=-(d*i-f*g),C2=d*h-e*g;const det=a*A+b*B+c*C2;if(!det)return m;
+return [A/det,B/det,C2/det,-(b*i-c*h)/det,(a*i-c*g)/det,-(a*h-b*g)/det,(b*f-c*e)/det,-(a*f-c*d)/det,(a*e-b*d)/det];}
+let prog,uRes,uHinv,uTile,uPanel;
+if(gl){
+ const vs=`#version 300 es
+ void main(){vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2));gl_Position=vec4(p*2.0-1.0,0.0,1.0);}`;
+ const fs=`#version 300 es
+ precision highp float;uniform vec2 res;uniform mat3 Hinv;uniform vec2 tile;uniform sampler2D panel;out vec4 o;
+ void main(){vec2 p=vec2(gl_FragCoord.x,res.y-gl_FragCoord.y);vec3 q=Hinv*vec3(p,1.0);q/=q.z;
+  if(q.x<0.0||q.y<0.0||q.x>res.x||q.y>res.y)discard;vec3 col=texture(panel,q/tile).rgb;o=vec4(col,1.0);}`;
+ function sh(t,s){const o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);return o;}
+ prog=gl.createProgram();gl.attachShader(prog,sh(gl.VERTEX_SHADER,vs));gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,fs));gl.linkProgram(prog);gl.useProgram(prog);
+ uRes=gl.getUniformLocation(prog,'res');uHinv=gl.getUniformLocation(prog,'Hinv');uTile=gl.getUniformLocation(prog,'tile');uPanel=gl.getUniformLocation(prog,'panel');
+ gl.bindBuffer(gl.ARRAY_BUFFER,gl.createBuffer());gl.bufferData(gl.ARRAY_BUFFER,4,gl.STATIC_DRAW);
+}
+function uploadTex(img){ if(!gl)return; tex=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,tex);
+ gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);
+ gl.wrapS=gl.wrapT=gl.REPEAT; gl.generateMipmap(gl.TEXTURE_2D);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);
+ gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+ const ext=gl.getExtension('EXT_texture_filter_anisotropic');
+ if(ext)gl.texParameterf(gl.TEXTURE_2D,ext.TEXTURE_MAX_ANISOTROPY_EXT,Math.min(8,gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT))); }
+function Hmat(){const R=C.map(c=>[c[0]*W,c[1]*H]);const S=[[0,0],[W,0],[W,H],[0,H]];const A=[],b=[];
+ for(let i=0;i<4;i++){const xs=S[i][0],ys=S[i][1],xd=R[i][0],yd=R[i][1];
+  A.push([xs,ys,1,0,0,0,-xs*xd,-ys*xd]);b.push(xd);A.push([0,0,0,xs,ys,1,-xs*yd,-ys*yd]);b.push(yd);}
+ const s=solve8(A,b);return [s[0],s[1],s[2],s[3],s[4],s[5],s[6],s[7],1];}
+function draw(){ if(!W)return;
+ handles.forEach((h,i)=>{h.style.left=C[i][0]*W+'px';h.style.top=C[i][1]*H+'px';});
+ const ppm=W/ww, tile=[TH*ppm,2*TL*ppm];
+ cssc.style.display=mode==='css'?'block':'none'; cv.style.display=mode==='gl'?'block':'none';
+ if(mode==='css'){ const m=Hmat(); cssc.style.transform='matrix3d('+m[0]+','+m[3]+',0,'+m[6]+','+m[1]+','+m[4]+',0,'+m[7]+',0,0,1,0,'+m[2]+','+m[5]+',0,1)';
+   cssc.style.backgroundImage='url(../pipeline/textures/'+fin+'/visualizer-rot-mir.webp)';
+   cssc.style.backgroundSize=tile[0]+'px '+tile[1]+'px'; return; }
+ if(!gl||!tex)return; cv.width=W; cv.height=H; gl.viewport(0,0,W,H); gl.useProgram(prog);
+ gl.uniform2f(uRes,W,H); gl.uniform2f(uTile,tile[0],tile[1]);
+ const hi=inv3(Hmat()); gl.uniformMatrix3fv(uHinv,false,new Float32Array([hi[0],hi[3],hi[6],hi[1],hi[4],hi[7],hi[2],hi[5],hi[8]]);
+ gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,tex); gl.uniform1i(uPanel,0);
+ gl.drawArrays(gl.TRIANGLES,0,3); }
+let benching=false;
+document.getElementById('bench').onclick=()=>{ if(benching)return; benching=true; let n=0; const t0=performance.now(); const base=C.map(c=>c.slice());
+ (function step(t){ const k=(t-t0)/1000; if(k>3){benching=false;fpsEl.textContent=mode+' FPS='+(n/3).toFixed(1);return;}
+   C[0][0]=base[0][0]+0.06*Math.sin(k*5); C[1][0]=base[1][0]-0.06*Math.sin(k*5); draw(); n++; requestAnimationFrame(step); })(t0); };
+document.getElementById('mgl').onclick=e=>{ mode=mode==='gl'?'css':'gl'; e.target.textContent='Mode: '+(mode==='gl'?'WebGL2':'CSS'); draw(); };
+document.getElementById('fin').onchange=e=>{fin=e.target.value;loadTex();};
+document.getElementById('ww').oninput=e=>{ww=+e.target.value||3;draw();};
+function loadTex(){ const im=new Image(); im.onload=()=>{tileImg=im;uploadTex(im);draw();}; im.src='../pipeline/textures/'+fin+'/visualizer-rot-mir.webp'; }
+document.getElementById('photo').onchange=e=>{const f=e.target.files[0];if(!f)return;
+ room.onload=()=>{W=stage.clientWidth;H=stage.clientHeight;draw();};room.src=URL.createObjectURL(f);};
+let drag=-1;handles.forEach((h,i)=>{h.addEventListener('pointerdown',ev=>{drag=i;h.setPointerCapture(ev.pointerId);});
+ h.addEventListener('pointermove',ev=>{if(drag!==i)return;const r=stage.getBoundingClientRect();C[i]=[(ev.clientX-r.left)/W,(ev.clientY-r.top)/H];draw();});
+ h.addEventListener('pointerup',()=>drag=-1);});
+loadTex();
+</script></body></html>
