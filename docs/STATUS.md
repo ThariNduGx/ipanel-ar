@@ -82,3 +82,10 @@ Rejected: LayoutNet/RoomNet; HarmonyNet/Poisson (license + weight risk); OpenCV.
 - Recapture prompt: ON (confidence <0.6 blocks cart, shows retake guidance; manual drag restores).
 - UGC gallery: REMOVED entirely (backend, REST, admin UI, frontend, NSFWJS gate).
 - Ground-truth dataset: DEFERRED (owner cannot provide yet); ingestion pipeline stays ready; realism claims remain unverified until it lands.
+
+## Decisions locked (owner sign-off)
+- Coverage model = linear-cut (columns=ceil(w/0.29); panels=ceil(cols*h/len)); matches 12Ft table exactly; 10Ft conservative. Factory rule confirmation still open.
+- iOS native companion: REJECTED. Web ceiling = photo-first + WebXR Android.
+- Recapture prompt: ON (confidence <0.6 blocks cart + shows retake guidance; manual drag restores).
+- UGC gallery: REMOVED entirely (backend, REST, admin UI, frontend, NSFWJS gate).
+- Ground-truth dataset: DEFERRED (owner cannot provide yet); ingestion pipeline stays ready; realism claims remain unverified until it lands.
