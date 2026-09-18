@@ -2,6 +2,7 @@
 if (!defined('ABSPATH')) { exit; }
 class iPanel_Visualizer {
     public static function init() {
+        add_action('woocommerce_single_product_summary', [__CLASS__, 'ar_button'], 25);
         add_shortcode('ipanel_room_visualizer', [__CLASS__, 'render']);
         add_action('admin_menu', [__CLASS__, 'menu']);
         add_action('admin_init', [__CLASS__, 'settings']);

@@ -793,6 +793,7 @@ function init(root){
   if(pre){const pi=FIN.findIndex(f=>f.slug===pre);if(pi>=0){S.fin=pi;}}
   qa('.rv-sw').forEach((el,j)=>el.classList.toggle('on',j===S.fin));
 
+  window.addEventListener('resize',function(){ if(S.photo && !stage.classList.contains('rv-hide')){ S.W=stage.clientWidth; S.H=stage.clientHeight; update(); } });
   loadMine();
   go(1);
 }
@@ -804,3 +805,19 @@ document.addEventListener('DOMContentLoaded',()=>document.querySelectorAll('.ipa
   }
 }));
 })();
+
+document.addEventListener('click',function(e){
+  var t=e.target;
+  if(t.closest && t.closest('[data-ipanel-ar-open]')){
+    var m=document.querySelector('[data-ipanel-ar-modal]');
+    if(m){ m.hidden=false; document.body.style.overflow='hidden';
+      setTimeout(function(){ window.dispatchEvent(new Event('resize')); },60); }
+    return;
+  }
+  if(t.closest && t.closest('[data-ipanel-ar-close]')){
+    var m2=document.querySelector('[data-ipanel-ar-modal]');
+    if(m2){ m2.hidden=true; document.body.style.overflow=''; }
+    return;
+  }
+  if(t.hasAttribute && t.hasAttribute('data-ipanel-ar-modal')){ t.hidden=true; document.body.style.overflow=''; }
+});
