@@ -43,3 +43,10 @@
 @media (prefers-reduced-motion: reduce){.ipanel-rv *{transition:none!important;animation:none!important}}
 .rv-btn:focus-visible,.rv-h:focus-visible,.rv-sw:focus-visible{outline:3px solid #0b5cff;outline-offset:2px}
 .rv-warn{position:absolute;left:8px;right:8px;top:8px;background:rgba(180,30,30,.92);color:#fff;font-size:12px;padding:8px 10px;border-radius:10px;z-index:9}
+.rv-shadow{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 60px rgba(0,0,0,.4)}
+.rv-hint{position:absolute;right:8px;top:8px;max-width:70%;color:#fff;font-size:12px;padding:6px 10px;border-radius:10px;z-index:9}
+.rv-mine{display:flex;gap:10px;overflow-x:auto;padding:6px 2px}
+.rv-mine img{width:86px;height:64px;object-fit:cover;border-radius:10px;border:2px solid #dfe5ec;cursor:pointer}
+.rv-gl{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:none}
+.rv-cal{display:none}
+[data-wpresets] button{flex:0 0 auto;padding:8px 14px;border-radius:999px;background:#eef2f7;border:0;font-size:13px;font-weight:600;color:#334;cursor:pointer}
