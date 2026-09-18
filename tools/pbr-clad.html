@@ -1,0 +1,80 @@
+<!doctype html><html><head><meta charset="utf-8"><title>iPanel PBR bench</title>
+<style>body{font:14px system-ui;margin:16px;background:#111;color:#eee}
+#stage{position:relative;display:inline-block;border:1px solid #444;touch-action:none}
+#stage img{display:block;width:100%}canvas{position:absolute;inset:0;pointer-events:none}
+.h{position:absolute;width:30px;height:30px;margin:-15px;border-radius:50%;background:#0af;border:3px solid #fff;cursor:grab;z-index:9}
+.row{margin:8px 0}.row label{margin-right:12px}button{padding:8px 14px;margin-right:8px}</style></head><body>
+<h3>PBR bench — groove normal maps + clearcoat + photo-estimated IBL (three.js)</h3>
+<div class="row"><label>Photo <input type="file" id="photo" accept="image/*"></label>
+<label>Finish <select id="fin"><option>rich-brown</option><option>rich-teak</option><option>rich-maple</option><option>gray-marble</option><option>black-marble</option></select></label>
+<label>Width(m) <input id="ww" type="number" value="3" step="0.1" style="width:60px"></label>
+<label><input id="vert" type="checkbox" checked> vertical slats</label></div>
+<div class="row"><button id="bench">Bench 3s</button><span id="fps"></span> <span id="st"></span></div>
+<div id="stage"><img id="room"><canvas id="cv"></canvas></div>
+<script type="module">
+import * as T from 'https://cdn.jsdelivr.net/npm/three@0.176.0/build/three.module.min.js';
+const TEX='../pipeline/textures/';
+let W=0,H=0,fin='rich-brown',ww=3,vert=true,photoEl=document.getElementById('room');
+let C=[[.2,.25],[.8,.25],[.8,.8],[.2,.8]];
+const stage=document.getElementById('stage'),cv=document.getElementById('cv'),st=document.getElementById('st');
+const handles=C.map((_,i)=>{const d=document.createElement('div');d.className='h';stage.appendChild(d);return d;});
+function solve8(A,b){for(let i=0;i<8;i++){let p=i;for(let r=i+1;r<8;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;
+[A[i],A[p]]=[A[p],A[i]];const t=b[i];b[i]=b[p];b[p]=t;const pv=A[i][i]||1e-12;
+for(let r=0;r<8;r++){if(r===i)continue;const f=A[r][i]/pv;for(let c=i;c<8;c++)A[r][c]-=f*A[i][c];b[r]-=f*b[i];}}
+return b.map((v,i)=>v/(A[i][i]||1e-12));}
+const renderer=new T.WebGLRenderer({canvas:cv,alpha:true,antialias:true});
+renderer.outputColorSpace=T.SRGBColorSpace; renderer.toneMapping=T.ACESFilmicToneMapping;
+const scene=new T.Scene(), cam=new T.PerspectiveCamera(60,1,0.05,60);
+const geo=new T.PlaneGeometry(1,1); geo.translate(0.5,-0.5,0);
+const mat=new T.MeshPhysicalMaterial({side:T.FrontSide,metalness:0});
+const mesh=new T.Mesh(geo,mat); mesh.matrixAutoUpdate=false; scene.add(mesh);
+const pmrem=new T.PMREMGenerator(renderer);
+const sun=new T.DirectionalLight(0xffffff,1.2); scene.add(sun); scene.add(new T.AmbientLight(0xffffff,0.25));
+function loadTex(u){return new Promise(res=>{const im=new Image();im.onload=()=>res(im);im.src=u;});}
+async function loadFinish(){ st.textContent='loading textures…';
+ const [a,nv,nh]=await Promise.all([loadTex(TEX+fin+'/albedo-s'+(vert?'-rot':'')+'.webp'),loadTex(TEX+'_common/groove-normal-v.png'),loadTex(TEX+'_common/groove-normal-h.png')]);
+ const mk=(im,srgb)=>{const t=new T.Texture(im);if(srgb)t.colorSpace=T.SRGBColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.generateMipmaps=true;t.minFilter=T.LinearMipmapLinearFilter;t.anisotropy=renderer.capabilities.getMaxAnisotropy();t.needsUpdate=true;return t;};
+ if(mat.map)mat.map.dispose(); if(mat.normalMap)mat.normalMap.dispose();
+ mat.map=mk(a,true); mat.normalMap=mk(vert?nv:nh,false); mat.normalScale=new T.Vector2(1.2,1.2);
+ const marble=/marble/.test(fin);
+ mat.roughness=marble?0.28:0.55; mat.clearcoat=marble?0.7:0.15; mat.clearcoatRoughness=0.25; mat.needsUpdate=true;
+ st.textContent=''; draw(); }
+function envFromPhoto(){ const w=64,h=32,c=document.createElement('canvas');c.width=w;c.height=h;
+ const x=c.getContext('2d'); x.drawImage(photoEl,0,0,w,h); const d=x.getImageData(0,0,w,h).data;
+ const data=new Uint8Array(w*h*4); for(let i=0;i<w*h;i++){const o=i*4;data[o]=d[o];data[o+1]=d[o+1];data[o+2]=d[o+2];data[o+3]=255;}
+ const eq=new T.DataTexture(data,w,h); eq.needsUpdate=true; eq.mapping=T.EquirectangularReflectionMapping; eq.colorSpace=T.SRGBColorSpace;
+ scene.environment=pmrem.fromEquirectangular(eq).texture; eq.dispose(); }
+function draw(){ if(!W||!mat.map)return;
+ cv.width=W; cv.height=H; renderer.setSize(W,H,false);
+ const fx=W/(2*Math.tan(65*Math.PI/360)); cam.aspect=W/H; cam.fov=2*Math.atan(H/(2*fx))*180/Math.PI; cam.updateProjectionMatrix();
+ const R=C.map(c=>[c[0]*W,c[1]*H]); const Hm=ww*0.8;
+ const Ss=[[0,0],[ww,0],[ww,Hm],[0,Hm]]; const A=[],b=[];
+ for(let i=0;i<4;i++){const xs=Ss[i][0],ys=Ss[i][1],xd=R[i][0],yd=R[i][1];
+  A.push([xs,ys,1,0,0,0,-xs*xd,-ys*xd]);b.push(xd);A.push([0,0,0,xs,ys,1,-xs*yd,-ys*yd]);b.push(yd);}
+ const h=solve8(A,b);
+ const fy=fx, cx=W/2, cy=H/2;
+ const kinv=v=>{const w=v[2]||1;return [(v[0]/w-cx)/fx,(v[1]/w-cy)/fy,1];};
+ let r1=kinv([h[0],h[3],h[6]]), r2=kinv([h[1],h[4],h[7]]);
+ const lam=1/Math.hypot(r1[0],r1[1],r1[2]); r1=r1.map(v=>v*lam); r2=r2.map(v=>v*lam);
+ const r3=[r1[1]*r2[2]-r1[2]*r2[1],r1[2]*r2[0]-r1[0]*r2[2],r1[0]*r2[1]-r1[1]*r2[0]];
+ const t=kinv([h[2],h[5],h[8]]).map(v=>v*lam);
+ mesh.matrix.set(r1[0]*ww,-r2[0]*Hm,r3[0],t[0], r1[1]*ww,-r2[1]*Hm,r3[1],t[1], r1[2]*ww,-r2[2]*Hm,r3[2],t[2], 0,0,0,1);
+ mat.map.repeat.set(vert? ww/0.3 : ww/1.0, vert? Hm/1.0 : Hm/0.3);
+ mat.normalMap.repeat.set(ww/0.3,Hm/0.3);
+ sun.position.set(0.4,0.8,1.0);
+ renderer.render(scene,cam);
+ handles.forEach((hd,i)=>{hd.style.left=C[i][0]*W+'px';hd.style.top=C[i][1]*H+'px';}); }
+document.getElementById('fin').onchange=e=>{fin=e.target.value;loadFinish();};
+document.getElementById('vert').onchange=e=>{vert=e.target.checked;loadFinish();};
+document.getElementById('ww').oninput=e=>{ww=+e.target.value||3;draw();};
+let benching=false;
+document.getElementById('bench').onclick=()=>{if(benching)return;benching=true;let n=0;const t0=performance.now();const base=C.map(c=>c.slice());
+ (function step(t){const k=(t-t0)/1000;if(k>3){benching=false;document.getElementById('fps').textContent='PBR FPS='+(n/3).toFixed(1);return;}
+  C[0][0]=base[0][0]+0.06*Math.sin(k*5);C[1][0]=base[1][0]-0.06*Math.sin(k*5);draw();n++;requestAnimationFrame(step);})(t0);};
+document.getElementById('photo').onchange=e=>{const f=e.target.files[0];if(!f)return;
+ photoEl.onload=()=>{W=stage.clientWidth;H=stage.clientHeight;envFromPhoto();draw();};photoEl.src=URL.createObjectURL(f);};
+let drag=-1;handles.forEach((hd,i)=>{hd.addEventListener('pointerdown',ev=>{drag=i;hd.setPointerCapture(ev.pointerId);});
+ hd.addEventListener('pointermove',ev=>{if(drag!==i)return;const r=stage.getBoundingClientRect();C[i]=[(ev.clientX-r.left)/W,(ev.clientY-r.top)/H];draw();});
+ hd.addEventListener('pointerup',()=>drag=-1);});
+loadFinish();
+</script></body></html>
