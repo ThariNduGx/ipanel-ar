@@ -17,7 +17,6 @@ add_action('wp_enqueue_scripts', function () {
 require_once __DIR__.'/includes/class-visualizer.php';
 require_once __DIR__.'/includes/class-compat.php';
 require_once __DIR__.'/includes/class-elementor.php';
-require_once __DIR__.'/includes/class-ugc.php';
 
 add_shortcode('ipanel_viewer', function ($atts) {
     $a = shortcode_atts(['glb' => '', 'usdz' => '', 'height' => '420'], $atts);

@@ -17,7 +17,7 @@ function init(root){
  +'<div class="rv-steps"><span data-s1>1 Photo</span><span data-s2>2 Surface</span><span data-s3>3 Finish</span><span data-s4>4 Result</span></div>'
  +'<div class="rv-stage rv-hide"><img class="rv-photo" alt=""><div class="rv-clad"><div class="rv-print"></div><div class="rv-grooves"></div><div class="rv-shade"></div></div>'
  +'<div class="rv-occl"></div>'
- +'<svg class="rv-quad"><polygon fill="none" stroke="#0b5cff" stroke-width="2"/></svg>'+'<div class="rv-wipe"><i>⟷</i></div>'+'<div class="rv-brand"><span class="rv-bname"></span><span class="rv-burl">ipanel.lk</span><img class="rv-bqr" alt=""></div></div>'
+ +'<svg class="rv-quad"><polygon fill="none" stroke="#0b5cff" stroke-width="2"/></svg>'+'<div class="rv-wipe"><i>⟷</i></div>'+'<div class="rv-warn rv-hide">📷 Low confidence — retake straight-on with the whole surface in frame, or adjust the dots.</div>'+'<div class="rv-brand"><span class="rv-bname"></span><span class="rv-burl">ipanel.lk</span><img class="rv-bqr" alt=""></div></div>'
  +'<div class="rv-sheet">'
  +'<div data-p1><div class="rv-title">Show it on YOUR space</div>'
  +'<div class="rv-btnrow"><button class="rv-btn" data-cam>Take photo</button><button class="rv-btn ghost" data-up>Upload</button></div>'
@@ -195,7 +195,7 @@ function init(root){
  handles.forEach((h,i)=>{h.addEventListener('pointerdown',e=>{drag=i;h.setPointerCapture(e.pointerId);});
   h.addEventListener('pointermove',e=>{if(drag!==i)return;const r=stage.getBoundingClientRect();
    S.C[i]=[(e.clientX-r.left)/S.W,(e.clientY-r.top)/S.H];update();});
-  h.addEventListener('pointerup',()=>drag=-1);});
+  h.addEventListener('pointerup',()=>{drag=-1;S.conf=Math.max(S.conf||0,0.75);});});
  go(1);
 }
 document.addEventListener('DOMContentLoaded',()=>document.querySelectorAll('.ipanel-rv').forEach(r=>{try{init(r);}catch(e){console.error(e);

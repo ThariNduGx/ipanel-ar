@@ -42,3 +42,4 @@
 .rv-bname{font-weight:700;font-size:14px}.rv-burl{opacity:.8;margin-right:auto}.rv-bqr{width:44px;height:44px;border-radius:6px;background:#fff}
 @media (prefers-reduced-motion: reduce){.ipanel-rv *{transition:none!important;animation:none!important}}
 .rv-btn:focus-visible,.rv-h:focus-visible,.rv-sw:focus-visible{outline:3px solid #0b5cff;outline-offset:2px}
+.rv-warn{position:absolute;left:8px;right:8px;top:8px;background:rgba(180,30,30,.92);color:#fff;font-size:12px;padding:8px 10px;border-radius:10px;z-index:9}

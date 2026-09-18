@@ -28,7 +28,6 @@ class iPanel_Visualizer {
            . esc_textarea(get_option('ipanel_rv_color','')) . '</textarea>';
         echo '<p>One per line: slug=brightness,saturate,contrast (from the visualizer sliders).</p>';
         submit_button();
-        if (class_exists('iPanel_UGC')) { iPanel_UGC::admin_list(); }
         echo '</form></div>';
     }
     public static function render($atts) {
