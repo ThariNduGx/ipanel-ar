@@ -14,6 +14,9 @@ class iPanel_Visualizer {
         register_setting('ipanel_rv', 'ipanel_rv_products');
         register_setting('ipanel_rv', 'ipanel_rv_color');
         register_setting('ipanel_rv', 'ipanel_rv_livear');
+        register_setting('ipanel_rv', 'ipanel_rv_gl');
+        register_setting('ipanel_rv', 'ipanel_rv_onproduct');
+        register_setting('ipanel_rv', 'ipanel_rv_pbr');
     }
     public static function page() {
         echo '<div class="wrap"><h1>iPanel Visualizer</h1><form method="post" action="options.php">';
@@ -32,7 +35,9 @@ class iPanel_Visualizer {
     }
     public static function render($atts) {
         wp_enqueue_style('ipanel-rv', IPANEL_VISUALIZER_URL . 'assets/css/visualizer.css', [], IPANEL_VISUALIZER_VERSION);
-        wp_enqueue_script('ipanel-rv', IPANEL_VISUALIZER_URL . 'assets/js/visualizer.js', [], IPANEL_VISUALIZER_VERSION, true);
+        wp_enqueue_script('ipanel-rv-pbr', IPANEL_VISUALIZER_URL . 'assets/js/pbrrenderer.js', [], IPANEL_VISUALIZER_VERSION, true);
+        wp_enqueue_script('ipanel-rv-gl', IPANEL_VISUALIZER_URL . 'assets/js/glrenderer.js', ['ipanel-rv-pbr'], IPANEL_VISUALIZER_VERSION, true);
+        wp_enqueue_script('ipanel-rv', IPANEL_VISUALIZER_URL . 'assets/js/visualizer.js', ['ipanel-rv-gl'], IPANEL_VISUALIZER_VERSION, true);
         $samples = array_values(array_filter(array_map('trim', explode("\n", (string) get_option('ipanel_rv_samples', '')))));
         $cols = [];
         foreach (array_filter(array_map('trim', explode("\n", (string) get_option('ipanel_rv_color', '')))) as $line) {
