@@ -1,0 +1,37 @@
+<!doctype html><html><head><meta charset="utf-8"><title>GT render harness</title>
+<style>body{margin:0;background:#000}canvas{display:block}</style></head><body>
+<canvas id="out"></canvas>
+<script>
+function solve8(A,b){for(let i=0;i<8;i++){let p=i;for(let r=i+1;r<8;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;
+[A[i],A[p]]=[A[p],A[i]];const t=b[i];b[i]=b[p];b[p]=t;const pv=A[i][i]||1e-12;
+for(let r=0;r<8;r++){if(r===i)continue;const f=A[r][i]/pv;for(let c=i;c<8;c++)A[r][c]-=f*A[i][c];b[r]-=f*b[i];}}
+return b.map((v,i)=>v/(A[i][i]||1e-12));}
+const q=new URLSearchParams(location.search);
+const img=new Image(); img.onload=()=>{
+ const W=img.naturalWidth,H=img.naturalHeight; const cv=document.getElementById('out'); cv.width=W; cv.height=H;
+ const x=cv.getContext('2d'); x.drawImage(img,0,0);
+ const quad=JSON.parse(q.get('quad')).map(p=>[p[0]*W,p[1]*H]);
+ const tex=new Image(); tex.onload=()=>{
+  const S=[[0,0],[1,0],[1,1],[0,1]],A=[],b=[];
+  for(let i=0;i<4;i++){const xs=S[i][0],ys=S[i][1],xd=quad[i][0],yd=quad[i][1];
+   A.push([xs,ys,1,0,0,0,-xs*xd,-ys*xd]);b.push(xd);A.push([0,0,0,xs,ys,1,-xs*yd,-ys*yd]);b.push(yd);}
+  const h=solve8(A,b);
+  const HP=(u,v)=>{const d=h[6]*u+h[7]*v+1;return [(h[0]*u+h[1]*v+h[2])/d,(h[3]*u+h[4]*v+h[5])/d];};
+  const N=24; x.save(); x.beginPath(); x.moveTo(quad[0][0],quad[0][1]); for(let i=1;i<4;i++)x.lineTo(quad[i][0],quad[i][1]); x.closePath(); x.clip();
+  for(let i=0;i<N;i++)for(let j=0;j<N;j++){
+   const u0=i/N,v0=j/N,u1=(i+1)/N,v1=(j+1)/N;
+   const p00=HP(u0,v0),p10=HP(u1,v0),p01=HP(u0,v1);
+   const a=p10[0]-p00[0],bb=p10[1]-p00[1],c=p01[0]-p00[0],d=p01[1]-p00[1];
+   x.setTransform(a,bb,c,d,p00[0],p00[1]);
+   x.drawImage(tex,u0*tex.width,v0*tex.height,(tex.width)/N,(tex.height)/N,0,0,1,1);
+  }
+  x.setTransform(1,0,0,1,0,0);
+  x.globalCompositeOperation='soft-light';
+  const bl=document.createElement('canvas'); bl.width=W;bl.height=H; const bx=bl.getContext('2d');
+  bx.filter='grayscale(1) blur(10px)'; bx.drawImage(img,0,0); x.drawImage(bl,0,0);
+  x.globalCompositeOperation='source-over'; x.restore();
+ };
+ tex.src='../pipeline/textures/'+q.get('finish')+'/visualizer.webp';
+};
+img.src='..'+q.get('photo');
+</script></body></html>

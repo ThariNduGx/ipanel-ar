@@ -1,0 +1,25 @@
+<!doctype html><html><head><meta charset="utf-8"><title>GT corner marker</title>
+<style>body{font:14px system-ui;margin:16px}#wrap{position:relative;display:inline-block}img{display:block;max-width:900px}
+svg{position:absolute;inset:0;width:100%;height:100%}textarea{width:100%;height:90px}</style></head><body>
+<h3>Ground-truth corner marker — click TL, TR, BR, BL on the installed-panel region</h3>
+<div><label>Photo file <input id="f" type="file" accept="image/*"></label>
+<label>Finish <input id="fin" value="rich-brown"></label>
+<label>Width m <input id="w" type="number" step="0.01" value="3.05"></label>
+<label>Height m <input id="h" type="number" step="0.01" value="2.44"></label>
+<label>Panels <input id="p" type="number" value="11"></label></div>
+<div id="wrap"><img id="im"><svg id="sv"><polygon id="pg" fill="none" stroke="#0b5cff" stroke-width="2"/></svg></div>
+<button id="copy">Copy JSON line</button> <button id="undo">Undo</button>
+<textarea id="out" placeholder="clicked corners appear here as a JSON line"></textarea>
+<script>
+let pts=[],W=0,H=0;
+const im=document.getElementById('im'),sv=document.getElementById('sv'),pg=document.getElementById('pg');
+document.getElementById('f').onchange=e=>{const f=e.target.files[0];if(!f)return;pts=[];im.src=URL.createObjectURL(f);
+ im.onload=()=>{W=im.clientWidth;H=im.clientHeight;};};
+im.onclick=e=>{if(pts.length>=4)return;const r=im.getBoundingClientRect();pts.push([(e.clientX-r.left)/W,(e.clientY-r.top)/H]);draw();};
+document.getElementById('undo').onclick=()=>{pts.pop();draw();};
+function draw(){pg.setAttribute('points',pts.map(p=>(p[0]*W)+','+(p[1]*H)).join(' '));}
+document.getElementById('copy').onclick=()=>{if(pts.length<4)return alert('click 4 corners');
+ const line=JSON.stringify({photo:(document.getElementById('f').files[0]||{}).name||'photo.jpg',quad:pts.map(p=>[+p[0].toFixed(4),+p[1].toFixed(4)]),
+  finish:document.getElementById('fin').value,width_m:+document.getElementById('w').value,height_m:+document.getElementById('h').value,panels:+document.getElementById('p').value});
+ document.getElementById('out').value=line; navigator.clipboard&&navigator.clipboard.writeText(line);};
+</script></body></html>
