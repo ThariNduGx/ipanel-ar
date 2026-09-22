@@ -194,11 +194,10 @@ function init(root){
     occl.style.maskImage='none'; occl.style.webkitMaskImage='none';
   }
 
-  function setPhoto(u){
+  function setPhoto(u,after){
     if(GL && GLmaskS){ GL.del(GLmaskS); GLmaskS=null; }
     if(GL && GLmaskO){ GL.del(GLmaskO); GLmaskO=null; }
     if(GL && GLlum){ GL.del(GLlum); GLlum=null; }
-    S.photo=null; clearMask(); photo.src=u; S.fovH=0;,after){
     S.photo=u; clearMask(); photo.src=u; S.fovH=0;
     if(u.indexOf('blob:')===0){
       fetch(u).then(r=>r.arrayBuffer()).then(buf=>new Promise(res=>{
@@ -605,6 +604,7 @@ function init(root){
     S.step=Math.max(1,Math.min(4,n));
     if(!S.seen) S.seen={};
     if(!S.seen[n]){S.seen[n]=1;ev('rv_step',{step:n});}
+    if(n===3&&S.seen[2])ev('rv_proceed',{conf:S.conf!=null?+S.conf.toFixed(2):-1,detected:S.conf!=null});
     [1,2,3,4].forEach(i=>{
       q('[data-p'+i+']').classList.toggle('rv-hide',i!==S.step);
       q('[data-s'+i+']').innerHTML=(i===S.step?'<b>':'')+i+' '+['Photo','Surface','Finish','Result'][i-1]+(i===S.step?'</b>':'');
@@ -640,6 +640,7 @@ function init(root){
       +'. Final count confirmed at checkout.';
   }
 
+  let evUpdateTimer=null;
   function update(){
     if(!S.W) return;
     const R=ring(S.C,S.W,S.H);
@@ -692,7 +693,7 @@ function init(root){
     const cartBtn=q('[data-cart]');
     if(cartBtn){cartBtn.disabled=low;cartBtn.style.opacity=low?0.5:1;}
     if(low&&!S.lowLogged){S.lowLogged=true;ev('rv_lowconf',{conf:+S.conf.toFixed(2)});}
-    ev('rv_update',{finish:f.slug,surface:S.surface});
+    clearTimeout(evUpdateTimer);evUpdateTimer=setTimeout(()=>ev('rv_update',{finish:f.slug,surface:S.surface}),300);
   }
 
   function glDraw(){
@@ -772,6 +773,9 @@ function init(root){
     const arr=JSON.parse(localStorage.getItem('ipanel_rv_designs')||'[]');
     const w=q('.rv-mine'); w.innerHTML='';
     arr.forEach(d=>{
+      if(typeof d.fin !== 'number' || d.fin < 0 || d.fin >= FIN.length) return;
+      if(typeof d.d !== 'string' || !/^data:image\/(jpeg|png|webp);/.test(d.d)) return;
+      if(!Array.isArray(d.C) || d.C.length !== 4) return;
       const im=document.createElement('img');
       im.src=d.d;
       im.onclick=()=>{
@@ -822,18 +826,34 @@ document.addEventListener('DOMContentLoaded',()=>document.querySelectorAll('.ipa
 }));
 })();
 
+// Modal handlers with proper event handling and scroll lock
 document.addEventListener('click',function(e){
   var t=e.target;
   if(t.closest && t.closest('[data-ipanel-ar-open]')){
+    e.preventDefault(); e.stopPropagation();
     var m=document.querySelector('[data-ipanel-ar-modal]');
-    if(m){ m.hidden=false; document.body.style.overflow='hidden';
-      setTimeout(function(){ window.dispatchEvent(new Event('resize')); },60); }
+    if(m){
+      m.hidden=false;
+      document.body.classList.add('rv-modal-open');
+      setTimeout(function(){ window.dispatchEvent(new Event('resize')); },60);
+    }
     return;
   }
   if(t.closest && t.closest('[data-ipanel-ar-close]')){
-    var m2=document.querySelector('[data-ipanel-ar-modal]');
-    if(m2){ m2.hidden=true; document.body.style.overflow=''; }
+    e.preventDefault(); e.stopPropagation();
+    closeModal();
     return;
   }
-  if(t.hasAttribute && t.hasAttribute('data-ipanel-ar-modal')){ t.hidden=true; document.body.style.overflow=''; }
+  // Backdrop click: only if clicking the modal itself, not inner content
+  if(t.hasAttribute && t.hasAttribute('data-ipanel-ar-modal') && !t.closest('.ipanel-ar-modal-inner')){
+    closeModal();
+  }
+});
+function closeModal(){
+  var m=document.querySelector('[data-ipanel-ar-modal]');
+  if(m) m.hidden=true;
+  document.body.classList.remove('rv-modal-open');
+}
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape') closeModal();
 });
