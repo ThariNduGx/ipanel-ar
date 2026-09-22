@@ -48,7 +48,7 @@ function init(root){
   const TEX = root.dataset.textures || '/wp-content/uploads/ipanel-ar/textures/';
 
   const S={
-    photo:null,W:0,H:0,Hm:0,fovH:0,
+    photo:null,W:0,H:0,Hm:0,homog:null,fovH:0,
     C:[[.15,.2],[.85,.2],[.85,.8],[.15,.8]],
     surface:'wall',vert:true,fin:0,ww:3,len:3.05,vid:0,col:[1,1,1],
     shade:true,step:1,ba:100,autoScale:false,autoW:0,
@@ -194,7 +194,11 @@ function init(root){
     occl.style.maskImage='none'; occl.style.webkitMaskImage='none';
   }
 
-  function setPhoto(u,after){
+  function setPhoto(u){
+    if(GL && GLmaskS){ GL.del(GLmaskS); GLmaskS=null; }
+    if(GL && GLmaskO){ GL.del(GLmaskO); GLmaskO=null; }
+    if(GL && GLlum){ GL.del(GLlum); GLlum=null; }
+    S.photo=null; clearMask(); photo.src=u; S.fovH=0;,after){
     S.photo=u; clearMask(); photo.src=u; S.fovH=0;
     if(u.indexOf('blob:')===0){
       fetch(u).then(r=>r.arrayBuffer()).then(buf=>new Promise(res=>{
@@ -648,7 +652,7 @@ function init(root){
       A.push([0,0,0,xs,ys,1,-xs*yd,-ys*yd]); b.push(yd);
     }
     const s=solve8(A,b);
-    S.Hm=[s[0],s[1],s[2],s[3],s[4],s[5],s[6],s[7],1];
+    S.homog=[s[0],s[1],s[2],s[3],s[4],s[5],s[6],s[7],1];
     const tf='matrix3d('+s[0]+','+s[3]+',0,'+s[6]+','+s[1]+','+s[4]+',0,'+s[7]+',0,0,1,0,'+s[2]+','+s[5]+',0,1)';
     const f=FIN[S.fin];
     if(GL) ensureTex(f);
