@@ -53,7 +53,7 @@ if (!class_exists('iPanel_RV_Widget') && class_exists('\Elementor\Widget_Base'))
             }
             
             $product = (int) $this->get_settings('product');
-            $finish  = sanitize_text_field($this->get_settings('finish'));
+            $finish  = sanitize_key($this->get_settings('finish'));
 
             $shortcode = '[ipanel_room_visualizer';
             if ($product) $shortcode .= ' product="' . $product . '"';
