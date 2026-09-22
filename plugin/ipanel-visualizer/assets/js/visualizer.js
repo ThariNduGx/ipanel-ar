@@ -809,8 +809,15 @@ function init(root){
     if(e.target&&e.target.getAttribute&&e.target.getAttribute('data-retake')!==null){pick(false);}
   });
 
+  // Preselect finish from shortcode attributes
   const pre=root.dataset.finish;
-  if(pre){const pi=FIN.findIndex(f=>f.slug===pre);if(pi>=0){S.fin=pi;}}
+  const preProduct=parseInt(root.dataset.product||'0',10);
+  let targetFin=pre;
+  if(!targetFin && preProduct){
+    const map=JSON.parse(root.dataset.products||'{}');
+    targetFin=Object.keys(map).find(k=>map[k]===preProduct);
+  }
+  if(targetFin){const pi=FIN.findIndex(f=>f.slug===targetFin);if(pi>=0){S.fin=pi;}}
   qa('.rv-sw').forEach((el,j)=>el.classList.toggle('on',j===S.fin));
 
   window.addEventListener('resize',function(){ if(S.photo && !stage.classList.contains('rv-hide')){ S.W=stage.clientWidth; S.H=stage.clientHeight; update(); } });

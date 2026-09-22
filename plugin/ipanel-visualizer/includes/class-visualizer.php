@@ -67,7 +67,10 @@ class iPanel_Visualizer {
             'onproduct' => 'Show visualizer on product pages (finish auto-preselected)',
         ] as $key => $label) {
             printf(
-                '<p><label><input type="checkbox" name="ipanel_rv_%1$s" value="1" %2$s> %3$s</label></p>',
+                '<p><label>'
+                . '<input type="hidden" name="ipanel_rv_%1$s" value="">'
+                . '<input type="checkbox" name="ipanel_rv_%1$s" value="1" %2$s> %3$s'
+                . '</label></p>',
                 esc_attr($key),
                 checked(get_option("ipanel_rv_{$key}", ''), '1', false),
                 esc_html($label)
@@ -110,6 +113,7 @@ class iPanel_Visualizer {
             $kv = explode('=', $line, 2);
             if (count($kv) === 2) {
                 $parts = array_map('floatval', explode(',', trim($kv[1])));
+                // Reject if any float failed to parse (floatval returns 0.0 for non-numeric)
                 if (count($parts) === 3 && !in_array(0.0, $parts, true)) {
                     $cols[trim($kv[0])] = implode(',', $parts);
                 }
