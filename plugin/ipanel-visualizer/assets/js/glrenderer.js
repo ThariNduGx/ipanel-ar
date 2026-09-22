@@ -1,6 +1,6 @@
 (function(){
 function inv3(m){var a=m[0],b=m[1],c=m[2],d=m[3],e=m[4],f=m[5],g=m[6],h=m[7],i=m[8];
- var A=e*i-f*h,B=-(d*i-f*g),C=d*h-e*g,det=a*A+b*B+c*C;if(!det)return m;
+ var A=e*i-f*h,B=-(d*i-f*g),C=d*h-e*g,det=a*A+b*B+c*C;if(!det || Math.abs(det) < 1e-10) return null;
  return [A/det,B/det,C/det,-(b*i-c*h)/det,(a*i-c*g)/det,-(a*h-b*g)/det,(b*f-c*e)/det,-(a*f-c*d)/det,(a*e-b*d)/det];}
 window.iPanelGL={create:function(canvas){
  var gl=canvas.getContext('webgl2'); if(!gl)return null;
@@ -27,8 +27,8 @@ window.iPanelGL={create:function(canvas){
  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
  var loc=gl.getAttribLocation(pr,'a');gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
  var U=function(n){return gl.getUniformLocation(pr,n);};
- function upload(src,repeat,mip){var t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);
-  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,src);
+ function upload(src,repeat,mip,flipY){var t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,!!flipY);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,src);
   gl.wrapS=gl.wrapT=repeat?gl.REPEAT:gl.CLAMP_TO_EDGE;
   if(mip){gl.generateMipmap(gl.TEXTURE_2D);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);
    var e=gl.getExtension('EXT_texture_filter_anisotropic');
@@ -40,7 +40,8 @@ window.iPanelGL={create:function(canvas){
   mask:function(cvs){return upload(cvs,false,false);},
   draw:function(o){gl.viewport(0,0,o.W,o.H);gl.useProgram(pr);
    gl.uniform2f(U('res'),o.W,o.H);gl.uniform2f(U('tile'),o.tile[0],o.tile[1]);
-   var hi=inv3(o.H);gl.uniformMatrix3fv(U('Hinv'),false,new Float32Array([hi[0],hi[3],hi[6],hi[1],hi[4],hi[7],hi[2],hi[5],hi[8]]));
+   var hi=inv3(o.H);
+    if(!hi) return;gl.uniformMatrix3fv(U('Hinv'),false,new Float32Array([hi[0],hi[3],hi[6],hi[1],hi[4],hi[7],hi[2],hi[5],hi[8]]));
    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,o.panel);gl.uniform1i(U('panel'),0);
    gl.activeTexture(gl.TEXTURE1);if(o.maskS){gl.bindTexture(gl.TEXTURE_2D,o.maskS);gl.uniform1i(U('maskS'),1);gl.uniform1i(U('hasS'),1);}else gl.uniform1i(U('hasS'),0);
    gl.activeTexture(gl.TEXTURE2);if(o.maskO){gl.bindTexture(gl.TEXTURE_2D,o.maskO);gl.uniform1i(U('maskO'),2);gl.uniform1i(U('hasO'),1);}else gl.uniform1i(U('hasO'),0);

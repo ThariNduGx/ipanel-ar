@@ -20,7 +20,7 @@ window.iPanelPBR={create:function(canvas){
   var rt=new T.WebGLRenderTarget(1,1);
   var comp=new T.Scene(), ccam=new T.OrthographicCamera(-1,1,1,-1,0,1);
   var cmat=new T.ShaderMaterial({uniforms:{tD:{value:null},mS:{value:null},mO:{value:null},lU:{value:null},hasS:{value:0},hasO:{value:0},hasL:{value:0},mean:{value:1}},
-   vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position*2.0-1.0,0.0,1.0);}',
+   vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position = vec4(uv*2.0-1.0, 0.0, 1.0);}',
    fragmentShader:'precision highp float;varying vec2 vUv;uniform sampler2D tD;uniform sampler2D mS;uniform sampler2D mO;uniform sampler2D lU;uniform int hasS;uniform int hasO;uniform int hasL;uniform float mean;void main(){vec2 uv=vec2(vUv.x,1.0-vUv.y);if(hasS==1&&texture2D(mS,uv).a<0.5)discard;if(hasO==1&&texture2D(mO,uv).a>0.5)discard;vec4 c=texture2D(tD,uv);if(hasL==1){float l=texture2D(lU,uv).r;c.rgb*=clamp(l/max(mean,0.001),0.35,1.7);}gl_FragColor=vec4(c.rgb,1.0);}'});
   comp.add(new T.Mesh(new T.PlaneGeometry(2,2),cmat));
   var api={
