@@ -134,9 +134,6 @@ function init(root){
   }
   S.ab=window.__rv_ab;
 
-  if('serviceWorker' in navigator && location.protocol==='https:'){
-    navigator.serviceWorker.register('/sw.js').catch(()=>{});
-  }
 
   const calMode=location.search.indexOf('calibrate')>=0||!!document.getElementById('wp-admin-bar');
   root.querySelector('.rv-cal').style.display=calMode?'block':'none';

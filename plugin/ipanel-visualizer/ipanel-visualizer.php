@@ -2,12 +2,17 @@
 /**
  * Plugin Name: iPanel Visualizer
  * Description: AR/3D product visualization for iPanel ceiling & wall panels.
- * Version: 0.3.1
+ * Version: 0.4.0
+ * Requires at least: 5.9
  * Requires PHP: 8.0
  */
 if (!defined('ABSPATH')) { exit; }
-define('IPANEL_VISUALIZER_VERSION', '0.4.0');
-define('IPANEL_VISUALIZER_URL', plugin_dir_url(__FILE__));
+if (!defined('IPANEL_VISUALIZER_VERSION')) {
+    define('IPANEL_VISUALIZER_VERSION', '0.4.0');
+}
+if (!defined('IPANEL_VISUALIZER_URL')) {
+    define('IPANEL_VISUALIZER_URL', plugin_dir_url(__FILE__));
+}
 
 add_action('wp_enqueue_scripts', function () {
     wp_enqueue_style('ipanel-viewer', IPANEL_VISUALIZER_URL . 'assets/css/viewer.css', [], IPANEL_VISUALIZER_VERSION);

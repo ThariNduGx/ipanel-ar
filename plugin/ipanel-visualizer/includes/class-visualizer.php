@@ -34,6 +34,17 @@ class iPanel_Visualizer {
         submit_button();
         echo '</form></div>';
     }
+
+    public static function ar_button() {
+        if (!get_option('ipanel_rv_onproduct', '')) return;
+        if (!function_exists('is_product') || !is_product()) return;
+        global $product;
+        if (!$product) return;
+        echo '<button class="ipanel-ar-btn" type="button" data-ipanel-ar-open'
+           . ' data-product="' . esc_attr($product->get_id()) . '"'
+           . '>&#128241; Visualize in Your Room</button>';
+    }
+
     public static function render($atts) {
         wp_enqueue_style('ipanel-rv', IPANEL_VISUALIZER_URL . 'assets/css/visualizer.css', [], IPANEL_VISUALIZER_VERSION);
         wp_enqueue_script('ipanel-rv-pbr', IPANEL_VISUALIZER_URL . 'assets/js/pbrrenderer.js', [], IPANEL_VISUALIZER_VERSION, true);
