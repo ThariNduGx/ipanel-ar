@@ -43,6 +43,9 @@ function ring(C,W,H){
 
 function init(root){
   const samples=JSON.parse(root.dataset.samples||'[]');
+  const VENDOR = root.dataset.vendor || '/wp-content/plugins/ipanel-visualizer/assets/vendor/';
+  const MODELS = root.dataset.models || (location.origin + '/wp-content/uploads/ipanel-ar/hf/');
+  const TEX = root.dataset.textures || '/wp-content/uploads/ipanel-ar/textures/';
 
   const S={
     photo:null,W:0,H:0,Hm:0,fovH:0,
@@ -196,7 +199,7 @@ function init(root){
     if(u.indexOf('blob:')===0){
       fetch(u).then(r=>r.arrayBuffer()).then(buf=>new Promise(res=>{
         const sc=document.createElement('script');
-        sc.src='https://cdn.jsdelivr.net/npm/exifreader@4.32.0/dist/exifreader.js';
+        sc.src=VENDOR+'exifreader.js';
         sc.onload=()=>res(window.ExifReader); sc.onerror=()=>res(null);
         document.head.appendChild(sc);
       }).then(ER=>{
@@ -276,7 +279,7 @@ function init(root){
       if(!window.domtoimage){
         await new Promise((res,rej)=>{
           const sc=document.createElement('script');
-          sc.src='https://cdn.jsdelivr.net/npm/dom-to-image-more@3.4.5/dist/dom-to-image-more.min.js';
+          sc.src=VENDOR+'dom-to-image-more.min.js';
           sc.onload=res; sc.onerror=rej; document.head.appendChild(sc);
         });
       }
@@ -286,7 +289,7 @@ function init(root){
         if(!window.QRCode){
           await new Promise((res,rej)=>{
             const sc=document.createElement('script');
-            sc.src='https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
+            sc.src=VENDOR+'qrcode.min.js';
             sc.onload=res; sc.onerror=rej; document.head.appendChild(sc);
           });
         }
@@ -385,7 +388,8 @@ function init(root){
     st.textContent='Loading AI model (first time ~5MB)…';
     try{
       if(!window.__seg){
-        const mod=await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js');
+        const mod=await import(VENDOR+'transformers.min.js');
+        mod.env.remoteHost=MODELS; mod.env.remotePathTemplate='{model}/';
         mod.env.allowLocalModels=false;
         window.__seg=await mod.pipeline('image-segmentation','Xenova/segformer-b0-finetuned-ade-512-512',{quantized:true});
       }
@@ -543,7 +547,8 @@ function init(root){
       try{
         st.textContent='Refining occlusion (depth)…';
         if(!window.__dep){
-          const m3=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.0/+esm');
+          const m3=await import(VENDOR+'transformers-v3.mjs');
+          m3.env.remoteHost=MODELS; m3.env.remotePathTemplate='{model}/';
           m3.env.allowLocalModels=false;
           window.__dep=await m3.pipeline('depth-estimation','onnx-community/depth-anything-v2-small',{quantized:true});
         }

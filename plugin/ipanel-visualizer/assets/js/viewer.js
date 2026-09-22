@@ -1,4 +1,4 @@
-const MV_URL = 'https://cdn.jsdelivr.net/npm/@google/model-viewer@4.3.1/dist/model-viewer.min.js';
+const MV_URL = '/wp-content/plugins/ipanel-visualizer/assets/vendor/model-viewer.min.js';
 const loadModelViewer = () => import(MV_URL);
 
 async function init(container) {

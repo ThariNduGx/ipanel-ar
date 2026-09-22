@@ -1,5 +1,5 @@
 (function(){
-var CDN='https://cdn.jsdelivr.net/npm/three@0.176.0/build/three.module.min.js';
+var CDN='/wp-content/plugins/ipanel-visualizer/assets/vendor/three.module.min.js';
 var T=null;
 function solve8(A,b){for(var i=0;i<8;i++){var p=i;for(var r=i+1;r<8;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;
 var t=A[i];A[i]=A[p];A[p]=t;var t2=b[i];b[i]=b[p];b[p]=t2;var pv=A[i][i]||1e-12;
