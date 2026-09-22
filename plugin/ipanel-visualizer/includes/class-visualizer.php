@@ -11,14 +11,22 @@ class iPanel_Visualizer {
         add_options_page('iPanel Visualizer', 'iPanel Visualizer', 'manage_options', 'ipanel-visualizer', [__CLASS__, 'page']);
     }
     public static function settings() {
-        register_setting('ipanel_rv', 'ipanel_rv_samples');
-        register_setting('ipanel_rv', 'ipanel_rv_products');
-        register_setting('ipanel_rv', 'ipanel_rv_color');
-        register_setting('ipanel_rv', 'ipanel_rv_livear');
-        register_setting('ipanel_rv', 'ipanel_rv_gl');
-        register_setting('ipanel_rv', 'ipanel_rv_onproduct');
-        register_setting('ipanel_rv', 'ipanel_rv_pbr');
+        register_setting('ipanel_rv', 'ipanel_rv_samples', ['sanitize_callback' => [__CLASS__, 'sanitize_lines']]);
+        register_setting('ipanel_rv', 'ipanel_rv_products', ['sanitize_callback' => [__CLASS__, 'sanitize_lines']]);
+        register_setting('ipanel_rv', 'ipanel_rv_color', ['sanitize_callback' => [__CLASS__, 'sanitize_lines']]);
+        register_setting('ipanel_rv', 'ipanel_rv_livear', ['sanitize_callback' => 'rest_sanitize_boolean']);
+        register_setting('ipanel_rv', 'ipanel_rv_gl', ['sanitize_callback' => 'rest_sanitize_boolean']);
+        register_setting('ipanel_rv', 'ipanel_rv_onproduct', ['sanitize_callback' => 'rest_sanitize_boolean']);
+        register_setting('ipanel_rv', 'ipanel_rv_pbr', ['sanitize_callback' => 'rest_sanitize_boolean']);
     }
+
+    public static function sanitize_lines($value) {
+        $lines = array_filter(array_map('trim', explode("\n", (string) $value)));
+        $lines = array_slice($lines, 0, 100);
+        return implode("\n", array_map('wp_strip_all_tags', $lines));
+    }
+
+
     public static function page() {
         echo '<div class="wrap"><h1>iPanel Visualizer</h1><form method="post" action="options.php">';
         settings_fields('ipanel_rv');
@@ -59,7 +67,18 @@ class iPanel_Visualizer {
         foreach (array_filter(array_map('trim', explode("\n", (string) get_option('ipanel_rv_products', '')))) as $line) {
             $kv = explode('=', $line); if (count($kv) === 2) { $prods[trim($kv[0])] = (int) trim($kv[1]); }
         }
-        return '<div class="ipanel-rv" data-samples=\'' . wp_json_encode($samples) . '\' data-products=\'' . wp_json_encode($prods) . '\' data-colors=\'' . wp_json_encode($cols) . '\' data-livear="' . (get_option('ipanel_rv_livear','') ? '1' : '0') . '"></div>';
+        return '<div class="ipanel-rv"'
+            . ' data-vendor="' . esc_attr(IPANEL_VISUALIZER_URL . 'assets/vendor/') . '"'
+            . ' data-models="' . esc_attr(content_url('/uploads/ipanel-ar/hf/')) . '"'
+            . ' data-textures="' . esc_attr(content_url('/uploads/ipanel-ar/textures/')) . '"'
+            . ' data-samples="' . esc_attr(wp_json_encode($samples)) . '"'
+            . ' data-products="' . esc_attr(wp_json_encode($prods)) . '"'
+            . ' data-colors="' . esc_attr(wp_json_encode($cols)) . '"'
+            . ' data-livear="' . (get_option('ipanel_rv_livear','') ? '1' : '0') . '"'
+            . ' data-gl="' . (get_option('ipanel_rv_gl','') ? '1' : '0') . '"'
+            . ' data-pbr="' . (get_option('ipanel_rv_pbr','') ? '1' : '0') . '"'
+            . ' data-finish="' . esc_attr($a['finish']) . '"'
+            . '></div>';
     }
 }
 iPanel_Visualizer::init();
