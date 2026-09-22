@@ -28,11 +28,8 @@ class iPanel_Visualizer {
     public static function sanitize_lines($value) {
         $lines = array_filter(array_map('trim', explode("\n", (string) $value)));
         $lines = array_slice($lines, 0, 100);
-        // F-new-3: strip quotes and angle brackets for defense-in-depth
-        $lines = array_map(function($l) {
-            return preg_replace('/[<>\'"]/', '', wp_strip_all_tags($l));
-        }, $lines);
-        return implode("\n", $lines);
+        // wp_strip_all_tags removes HTML. Output escaping (esc_attr in render()) handles XSS.
+        return implode("\n", array_map('wp_strip_all_tags', $lines));
     }
 
     public static function page() {
@@ -113,9 +110,19 @@ class iPanel_Visualizer {
             $kv = explode('=', $line, 2);
             if (count($kv) === 2) {
                 $parts = array_map('floatval', explode(',', trim($kv[1])));
-                // Reject if any float failed to parse (floatval returns 0.0 for non-numeric)
-                if (count($parts) === 3 && !in_array(0.0, $parts, true)) {
-                    $cols[trim($kv[0])] = implode(',', $parts);
+                // Validate: 3 parts, each raw token is numeric, each parsed value is finite and in range
+                $raw = array_map('trim', explode(',', trim($kv[1])));
+                if (count($parts) === 3 && count($raw) === 3) {
+                    $valid = true;
+                    foreach ($raw as $i => $token) {
+                        if (!is_numeric($token) || !is_finite($parts[$i]) || $parts[$i] < 0.0 || $parts[$i] > 3.0) {
+                            $valid = false;
+                            break;
+                        }
+                    }
+                    if ($valid) {
+                        $cols[trim($kv[0])] = implode(',', $parts);
+                    }
                 }
             }
         }
