@@ -99,7 +99,7 @@ class iPanel_Visualizer {
         // F-new-1: enqueue homography shared module as dependency
         wp_enqueue_script('ipanel-rv-homog', IPANEL_VISUALIZER_URL . 'assets/js/homography.js', [], IPANEL_VISUALIZER_VERSION, true);
         wp_enqueue_script('ipanel-rv-pbr', IPANEL_VISUALIZER_URL . 'assets/js/pbrrenderer.js', ['ipanel-rv-homog'], IPANEL_VISUALIZER_VERSION, true);
-        wp_enqueue_script('ipanel-rv-gl', IPANEL_VISUALIZER_URL . 'assets/js/glrenderer.js', ['ipanel-rv-homog'], IPANEL_VISUALIZER_VERSION, true);
+        wp_enqueue_script('ipanel-rv-gl', IPANEL_VISUALIZER_URL . 'assets/js/glrenderer.js', [], IPANEL_VISUALIZER_VERSION, true);
         wp_enqueue_script('ipanel-rv', IPANEL_VISUALIZER_URL . 'assets/js/visualizer.js', ['ipanel-rv-gl'], IPANEL_VISUALIZER_VERSION, true);
 
         $samples = array_values(array_filter(array_map('trim', explode("\n", (string) get_option('ipanel_rv_samples', '')))));
