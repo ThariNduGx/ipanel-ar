@@ -36,7 +36,7 @@ window.iPanelGL={create:function(canvas){
   else gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);return t;}
  return {gl:gl,
-  tex:function(img){return upload(img,true,true);},
+  tex:function(img){return upload(img,true,true,true);},
   mask:function(cvs){return upload(cvs,false,false);},
   draw:function(o){gl.viewport(0,0,o.W,o.H);gl.useProgram(pr);
    gl.uniform2f(U('res'),o.W,o.H);gl.uniform2f(U('tile'),o.tile[0],o.tile[1]);

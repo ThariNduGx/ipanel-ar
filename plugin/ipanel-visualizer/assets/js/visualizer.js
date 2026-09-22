@@ -293,7 +293,17 @@ function init(root){
             sc.onload=res; sc.onerror=rej; document.head.appendChild(sc);
           });
         }
-        q('.rv-bqr').src=await window.QRCode.toDataURL(location.href,{width:128,margin:0});
+        // Use qrcodejs API (cdnjs version)
+        const qrContainer=document.createElement('div');
+        qrContainer.style.width='128px';
+        qrContainer.style.height='128px';
+        new window.QRCode(qrContainer,{text:location.href,width:128,height:128,margin:0});
+        // Wait for QR to render, then convert to image
+        setTimeout(()=>{
+          const canvas=qrContainer.querySelector('canvas');
+          if(canvas) q('.rv-bqr').src=canvas.toDataURL();
+          else q('.rv-bqr').style.display='none';
+        },100);
       }catch(e){q('.rv-bqr').style.display='none';}
       const blob=await window.domtoimage.toBlob(stage,{bgcolor:'#ffffff'});
       brand.style.display='none';
