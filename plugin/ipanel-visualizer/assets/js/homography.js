@@ -27,3 +27,68 @@ window.iPanelHomography = {
         return r;
     }
 };
+
+// RANSAC line fitting for robust edge detection
+window.iPanelHomography.ransacLine = function(points, iterations=100, threshold=5) {
+  if (points.length < 2) return null;
+  
+  let bestInliers = 0;
+  let bestLine = null;
+  
+  for (let i = 0; i < iterations; i++) {
+    // Random sample 2 points
+    const idx1 = Math.floor(Math.random() * points.length);
+    let idx2 = Math.floor(Math.random() * points.length);
+    if (idx2 === idx1) idx2 = (idx2 + 1) % points.length;
+    
+    const p1 = points[idx1];
+    const p2 = points[idx2];
+    
+    // Line: ax + by + c = 0
+    const a = p2[1] - p1[1];
+    const b = p1[0] - p2[0];
+    const c = p2[0]*p1[1] - p1[0]*p2[1];
+    const len = Math.sqrt(a*a + b*b);
+    
+    if (len < 1e-6) continue;
+    
+    // Count inliers
+    let inliers = 0;
+    for (const p of points) {
+      const dist = Math.abs(a*p[0] + b*p[1] + c) / len;
+      if (dist < threshold) inliers++;
+    }
+    
+    if (inliers > bestInliers) {
+      bestInliers = inliers;
+      bestLine = {a: a/len, b: b/len, c: c/len, inliers};
+    }
+  }
+  
+  return bestLine;
+};
+
+// Total Least Squares refinement
+window.iPanelHomography.tlsLine = function(points) {
+  if (points.length < 2) return null;
+  
+  const n = points.length;
+  let sumX = 0, sumY = 0;
+  for (const p of points) { sumX += p[0]; sumY += p[1]; }
+  const mx = sumX / n, my = sumY / n;
+  
+  // Covariance matrix
+  let sxx = 0, sxy = 0, syy = 0;
+  for (const p of points) {
+    const dx = p[0] - mx, dy = p[1] - my;
+    sxx += dx*dx; sxy += dx*dy; syy += dy*dy;
+  }
+  
+  // Eigenvector for smallest eigenvalue
+  const theta = 0.5 * Math.atan2(2*sxy, sxx - syy);
+  const a = -Math.sin(theta);
+  const b = Math.cos(theta);
+  const c = -(a*mx + b*my);
+  
+  return {a, b, c};
+};

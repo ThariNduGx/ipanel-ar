@@ -1,10 +1,7 @@
 (function(){
 var CDN='/wp-content/plugins/ipanel-visualizer/assets/vendor/three.module.min.js';
 var T=null;
-function solve8(A,b){for(var i=0;i<8;i++){var p=i;for(var r=i+1;r<8;r++)if(Math.abs(A[r][i])>Math.abs(A[p][i]))p=r;
-var t=A[i];A[i]=A[p];A[p]=t;var t2=b[i];b[i]=b[p];b[p]=t2;var pv=A[i][i]||1e-12;
-for(var r2=0;r2<8;r2++){if(r2===i)continue;var f=A[r2][i]/pv;for(var c=i;c<8;c++)A[r2][c]-=f*A[i][c];b[r2]-=f*b[i];}}
-return b.map(function(v,i){return v/(A[i][i]||1e-12);});}
+
 window.iPanelPBR={create:function(canvas){
  return import(CDN).then(function(TH){
   T=TH;
@@ -38,7 +35,7 @@ window.iPanelPBR={create:function(canvas){
     var Ss=[[0,0],[o.Wm,0],[o.Wm,o.Hm],[0,o.Hm]],A=[],b=[];
     for(var i=0;i<4;i++){var xs=Ss[i][0],ys=Ss[i][1],xd=o.corners[i][0],yd=o.corners[i][1];
      A.push([xs,ys,1,0,0,0,-xs*xd,-ys*xd]);b.push(xd);A.push([0,0,0,xs,ys,1,-xs*yd,-ys*yd]);b.push(yd);}
-    var h=solve8(A,b), cx=W/2, cy=H/2;
+    var h=window.iPanelHomography.solve8(A,b), cx=W/2, cy=H/2;
     var kinv=function(v){var w=v[2]||1;return[(v[0]/w-cx)/fx,(v[1]/w-cy)/fx,1];};
     var r1=kinv([h[0],h[3],h[6]]), r2=kinv([h[1],h[4],h[7]]);
     var lam=1/Math.hypot(r1[0],r1[1],r1[2]); r1=r1.map(function(v){return v*lam;}); r2=r2.map(function(v){return v*lam;});

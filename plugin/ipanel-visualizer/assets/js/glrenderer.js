@@ -1,7 +1,5 @@
 (function(){
-function inv3(m){var a=m[0],b=m[1],c=m[2],d=m[3],e=m[4],f=m[5],g=m[6],h=m[7],i=m[8];
- var A=e*i-f*h,B=-(d*i-f*g),C=d*h-e*g,det=a*A+b*B+c*C;if(!det || Math.abs(det) < 1e-10) return null;
- return [A/det,B/det,C/det,-(b*i-c*h)/det,(a*i-c*g)/det,-(a*h-b*g)/det,(b*f-c*e)/det,-(a*f-c*d)/det,(a*e-b*d)/det];}
+
 window.iPanelGL={create:function(canvas){
  var gl=canvas.getContext('webgl2'); if(!gl)return null;
  var VS='attribute vec2 a;varying vec2 vUv;void main(){vUv=a*0.5+0.5;gl_Position=vec4(a,0.0,1.0);}';
@@ -41,7 +39,7 @@ window.iPanelGL={create:function(canvas){
   mask:function(cvs){return upload(cvs,false,false);},
   draw:function(o){gl.viewport(0,0,o.W,o.H);gl.useProgram(pr);
    gl.uniform2f(U('res'),o.W,o.H);gl.uniform2f(U('tile'),o.tile[0],o.tile[1]);
-   var hi=inv3(o.H);
+   var hi=window.iPanelHomography.inv3(o.H);
     if(!hi) return;gl.uniformMatrix3fv(U('Hinv'),false,new Float32Array([hi[0],hi[3],hi[6],hi[1],hi[4],hi[7],hi[2],hi[5],hi[8]]));
    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,o.panel);gl.uniform1i(U('panel'),0);
    gl.activeTexture(gl.TEXTURE1);if(o.maskS){gl.bindTexture(gl.TEXTURE_2D,o.maskS);gl.uniform1i(U('maskS'),1);gl.uniform1i(U('hasS'),1);}else gl.uniform1i(U('hasS'),0);

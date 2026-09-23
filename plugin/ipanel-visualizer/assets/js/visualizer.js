@@ -15,22 +15,7 @@ function ev(n,o){
   if(window.gtag){window.gtag('event',n,p);}
 }
 
-function solve8(A,b){
-  for(let i=0;i<8;i++){
-    let p=i;
-    for(let r=i+1;r<8;r++) if(Math.abs(A[r][i])>Math.abs(A[p][i])) p=r;
-    [A[i],A[p]]=[A[p],A[i]];
-    const t=b[i]; b[i]=b[p]; b[p]=t;
-    const pv=A[i][i]||1e-12;
-    for(let r=0;r<8;r++){
-      if(r===i) continue;
-      const f=A[r][i]/pv;
-      for(let c=i;c<8;c++) A[r][c]-=f*A[i][c];
-      b[r]-=f*b[i];
-    }
-  }
-  return b.map((v,i)=>v/(A[i][i]||1e-12));
-}
+
 
 function ring(C,W,H){
   const px=C.map(c=>[c[0]*W,c[1]*H]);
@@ -652,7 +637,7 @@ function init(root){
       A.push([xs,ys,1,0,0,0,-xs*xd,-ys*xd]); b.push(xd);
       A.push([0,0,0,xs,ys,1,-xs*yd,-ys*yd]); b.push(yd);
     }
-    const s=solve8(A,b);
+    const s=window.iPanelHomography.solve8(A,b);
     S.homog=[s[0],s[1],s[2],s[3],s[4],s[5],s[6],s[7],1];
     const tf='matrix3d('+s[0]+','+s[3]+',0,'+s[6]+','+s[1]+','+s[4]+',0,'+s[7]+',0,0,1,0,'+s[2]+','+s[5]+',0,1)';
     const f=FIN[S.fin];
