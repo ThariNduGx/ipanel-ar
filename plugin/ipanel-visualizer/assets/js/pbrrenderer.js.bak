@@ -16,7 +16,7 @@ window.iPanelPBR={create:function(canvas){
   var pmrem=new T.PMREMGenerator(renderer);
   var rt=new T.WebGLRenderTarget(1,1);
   var comp=new T.Scene(), ccam=new T.OrthographicCamera(-1,1,1,-1,0,1);
-  var cmat=new T.ShaderMaterial({uniforms:{tD:{value:null},mS:{value:null},mO:{value:null},lU:{value:null},hasS:{value:0},hasO:{value:0},hasL:{value:0},lumMean:{value:1}},
+  var cmat=new T.ShaderMaterial({uniforms:{tD:{value:null},mS:{value:null},mO:{value:null},lU:{value:null},hasS:{value:0},hasO:{value:0},hasL:{value:0},mean:{value:1}},
    vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position = vec4(uv*2.0-1.0, 0.0, 1.0);}',
    fragmentShader:'precision highp float;varying vec2 vUv;uniform sampler2D tD;uniform sampler2D mS;uniform sampler2D mO;uniform sampler2D lU;uniform int hasS;uniform int hasO;uniform int hasL;uniform float lumMean;void main(){vec2 uv=vec2(vUv.x,1.0-vUv.y);if(hasS==1&&texture(mS,uv).a<0.5)discard;if(hasO==1&&texture(mO,uv).a>0.5)discard;vec4 c=texture(tD,uv);if(hasL==1){float l=texture(lU,uv).r;float r=l/max(lumMean,0.001);float sl=1.0/(1.0+exp(-4.0*(r-1.0)));c.rgb*=mix(0.35,1.7,sl);}gl_FragColor=vec4(c.rgb,1.0);}'});
   comp.add(new T.Mesh(new T.PlaneGeometry(2,2),cmat));
