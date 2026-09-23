@@ -39,7 +39,7 @@ window.iPanelGL={create:function(canvas){
   mask:function(cvs){return upload(cvs,false,false);},
   draw:function(o){gl.viewport(0,0,o.W,o.H);gl.useProgram(pr);
    gl.uniform2f(U('res'),o.W,o.H);gl.uniform2f(U('tile'),o.tile[0],o.tile[1]);
-   var hi=window.iPanelHomography.inv3(o.H);
+   var hi=window.iPanelHomography.inv3(o.homog);
     if(!hi) return;gl.uniformMatrix3fv(U('Hinv'),false,new Float32Array([hi[0],hi[3],hi[6],hi[1],hi[4],hi[7],hi[2],hi[5],hi[8]]));
    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,o.panel);gl.uniform1i(U('panel'),0);
    gl.activeTexture(gl.TEXTURE1);if(o.maskS){gl.bindTexture(gl.TEXTURE_2D,o.maskS);gl.uniform1i(U('maskS'),1);gl.uniform1i(U('hasS'),1);}else gl.uniform1i(U('hasS'),0);
