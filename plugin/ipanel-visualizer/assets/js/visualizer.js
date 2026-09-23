@@ -435,7 +435,15 @@ function init(root){
       const ly=[],ry=[],tx=[],bx=[];
       for(let y=miny;y<=maxy;y+=2){let a=-1,b=-1;for(let x=minx;x<=maxx;x++){if(comp[y*mw+x]){if(a<0)a=x;b=x;}}if(a>=0){ly.push([y,a]);ry.push([y,b]);}}
       for(let x=minx;x<=maxx;x+=2){let a=-1,b=-1;for(let y=miny;y<=maxy;y++){if(comp[y*mw+x]){if(a<0)a=y;b=y;}}if(a>=0){tx.push([x,a]);bx.push([x,b]);}}
-      function fit(pts){let n=pts.length,sx=0,sy=0,sxx=0,sxy=0;for(const p of pts){sx+=p[0];sy+=p[1];sxx+=p[0]*p[0];sxy+=p[0]*p[1];}const den=n*sxx-sx*sx;if(!den)return null;const a=(n*sxy-sx*sy)/den;return {a:a,b:(sy-a*sx)/n};}
+      function fit(pts){
+        if(pts.length < 2) return null;
+        // Use robust TLS from shared module
+        const line = window.iPanelHomography.tlsLine(pts);
+        if(!line) return null;
+        // Convert from ax + by + c = 0 to y = slope*x + intercept form
+        if(Math.abs(line.b) < 1e-10) return null; // vertical line
+        return {a: -line.a/line.b, b: -line.c/line.b};
+      }
       const L=fit(ly),Rr=fit(ry),T=fit(tx),B=fit(bx);
       function ix(Ln,Tn){const d=1-Ln.a*Tn.a;if(Math.abs(d)<1e-6)return null;const x=(Ln.a*Tn.b+Ln.b)/d;return [x,Tn.a*x+Tn.b];}
       let q4=null;
