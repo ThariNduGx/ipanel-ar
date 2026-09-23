@@ -62,7 +62,7 @@ async function init(container) {
         mv.setAttribute('shadow-intensity', '1');
         container.innerHTML = '';
         container.appendChild(mv);
-        (window.dataLayer = window.dataLayer || []).push({ event: 'visualizer_open' });
+        (window.dataLayer = window.dataLayer || []).push({ event: 'ipanel_viewer_open' });
     } catch (e) {
         // P1-2: CSP-safe error handler (no inline onclick)
         const errorDiv = document.createElement('div');

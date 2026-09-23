@@ -23,7 +23,17 @@ function ring(C,W,H){
   let r=px.map(p=>({p,a:Math.atan2(p[1]-cy,p[0]-cx)})).sort((u,v)=>u.a-v.a).map(o=>o.p);
   let k=0;
   for(let i=1;i<4;i++) if(r[i][0]+r[i][1]<r[k][0]+r[k][1]) k=i;
-  return r.slice(k).concat(r.slice(0,k));
+  const ordered = r.slice(k).concat(r.slice(0,k));
+  // Convexity check
+  let signs = [];
+  for(let i = 0; i < 4; i++){
+    const a = ordered[i], b = ordered[(i+1)%4], c = ordered[(i+2)%4];
+    signs.push(Math.sign((b[0]-a[0])*(c[1]-a[1]) - (b[1]-a[1])*(c[0]-a[0])));
+  }
+  if(Math.abs(signs.reduce((s,v) => s+v, 0)) < 3){
+    console.warn('iPanel: non-convex corner arrangement');
+  }
+  return ordered;
 }
 
 function init(root){
@@ -389,7 +399,7 @@ function init(root){
         const mod=await import(VENDOR+'transformers.min.js');
         mod.env.remoteHost=MODELS; mod.env.remotePathTemplate='{model}/';
         mod.env.allowLocalModels=false;
-        window.__seg=await mod.pipeline('image-segmentation','Xenova/segformer-b0-finetuned-ade-512-512',{quantized:true});
+        window.__seg=await mod.pipeline('image-segmentation','segformer-b0-ade',{quantized:true,progress_callback:p=>{if(p.status==='progress')st.textContent='Loading AI model… '+Math.round(p.progress)+'%';}});
       }
       const t0=performance.now();
       st.textContent='Analysing photo…';
@@ -437,15 +447,24 @@ function init(root){
       for(let x=minx;x<=maxx;x+=2){let a=-1,b=-1;for(let y=miny;y<=maxy;y++){if(comp[y*mw+x]){if(a<0)a=y;b=y;}}if(a>=0){tx.push([x,a]);bx.push([x,b]);}}
       function fit(pts){
         if(pts.length < 2) return null;
-        // Use robust TLS from shared module
+        if(!window.iPanelHomography || !window.iPanelHomography.tlsLine) return null;
         const line = window.iPanelHomography.tlsLine(pts);
         if(!line) return null;
-        // Convert from ax + by + c = 0 to y = slope*x + intercept form
-        if(Math.abs(line.b) < 1e-10) return null; // vertical line
+        // Handle vertical lines: x = -c/a (if b ≈ 0)
+        if(Math.abs(line.b) < 1e-10) {
+          if(Math.abs(line.a) < 1e-10) return null; // degenerate
+          return {vertical: true, x: -line.c / line.a};
+        }
         return {a: -line.a/line.b, b: -line.c/line.b};
       }
       const L=fit(ly),Rr=fit(ry),T=fit(tx),B=fit(bx);
-      function ix(Ln,Tn){const d=1-Ln.a*Tn.a;if(Math.abs(d)<1e-6)return null;const x=(Ln.a*Tn.b+Ln.b)/d;return [x,Tn.a*x+Tn.b];}
+      function ix(Ln,Tn){
+        if(Ln.vertical && Tn.vertical) return null;
+        if(Ln.vertical && !Tn.vertical) return [Ln.x, Tn.a * Ln.x + Tn.b];
+        if(!Ln.vertical && Tn.vertical) return [Tn.x, Ln.a * Tn.x + Ln.b];
+        const d=1-Ln.a*Tn.a;if(Math.abs(d)<1e-6)return null;
+        const x=(Ln.a*Tn.b+Ln.b)/d;return [x,Tn.a*x+Tn.b];
+      }
       let q4=null;
       if(L&&Rr&&T&&B){
         const c=[ix(L,T),ix(Rr,T),ix(Rr,B),ix(L,B)];
@@ -562,7 +581,7 @@ function init(root){
           const m3=await import(VENDOR+'transformers-v3.mjs');
           m3.env.remoteHost=MODELS; m3.env.remotePathTemplate='{model}/';
           m3.env.allowLocalModels=false;
-          window.__dep=await m3.pipeline('depth-estimation','onnx-community/depth-anything-v2-small',{quantized:true});
+          window.__dep=await m3.pipeline('depth-estimation','depth-anything-v2-small',{quantized:true,progress_callback:p=>{if(p.status==='progress')st.textContent='Loading depth model… '+Math.round(p.progress)+'%';}});
         }
         const dres=await window.__dep(c.toDataURL('image/jpeg',0.85));
         const dt=dres.predicted_depth, dw=dt.dims[dt.dims.length-1], dh=dt.dims[dt.dims.length-2], arr=dt.data;
@@ -662,7 +681,9 @@ function init(root){
       A.push([xs,ys,1,0,0,0,-xs*xd,-ys*xd]); b.push(xd);
       A.push([0,0,0,xs,ys,1,-xs*yd,-ys*yd]); b.push(yd);
     }
+    if(!window.iPanelHomography||!window.iPanelHomography.solve8) return;
     const s=window.iPanelHomography.solve8(A,b);
+    if(!s||s.some(v=>!isFinite(v))) return;
     S.homog=[s[0],s[1],s[2],s[3],s[4],s[5],s[6],s[7],1];
     const tf='matrix3d('+s[0]+','+s[3]+',0,'+s[6]+','+s[1]+','+s[4]+',0,'+s[7]+',0,0,1,0,'+s[2]+','+s[5]+',0,1)';
     const f=FIN[S.fin];
@@ -707,13 +728,13 @@ function init(root){
   }
 
   function glDraw(){
-    if(!GL||!GLcur||!S.W||!S.Hm) return;
+    if(!GL||!GLcur||!S.W||!S.homog) return;
     glCanvas.width=S.W; glCanvas.height=S.H; glCanvas.style.display='block';
     const ppm=S.W/S.ww;
     const tile = texKind==='full' ? (S.vert?[TH*ppm,3.05*ppm]:[3.05*ppm,TH*ppm])
       : texKind==='mir' ? (S.vert?[TH*ppm,2*TL*ppm]:[2*TL*ppm,TH*ppm])
       : (S.vert?[TH*ppm,TL*ppm]:[TL*ppm,TH*ppm]);
-    GL.draw({W:S.W,H:S.H,H:S.Hm,tile:tile,panel:GLcur,maskS:GLmaskS,maskO:GLmaskO,lum:GLlum,mean:GLmean});
+    GL.draw({W:S.W,H:S.H,homog:S.homog,tile:tile,panel:GLcur,maskS:GLmaskS,maskO:GLmaskO,lum:GLlum,mean:GLmean});
     glCanvas.style.clipPath=clad.style.clipPath;
     pr.style.display='none'; gr.style.display='none'; sh.style.display='none'; shd.style.display='none'; occl.style.display='none';
   }
