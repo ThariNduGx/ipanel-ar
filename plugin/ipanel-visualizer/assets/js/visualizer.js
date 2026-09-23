@@ -369,7 +369,7 @@ function init(root){
           if(a){const mm=parseFloat(a.value);if(mm>0) opts.set(mm/1000,{v:mm/1000,id:v.id});}
         });
       }
-      sel.innerHTML=[...opts.values()].map(o=>'<option value="'+o.v+'" data-vid="'+o.id+'">'+Math.round(o.v*1000)+'</option>').join('');
+      sel.innerHTML=[...opts.values()].map(o=>'<option value="'+Number(o.v)+'" data-vid="'+Number(o.id)+'">'+Math.round(Number(o.v)*1000)+'</option>').join('');
       if(!opts.has(S.len)) S.len=3.05;
       sel.value=String(S.len);
       S.vid=(sel.selectedOptions[0]?+sel.selectedOptions[0].dataset.vid:0);
