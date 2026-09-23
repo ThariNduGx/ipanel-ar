@@ -1,4 +1,4 @@
-.ipanel-rv{--blue:#0b5cff;--ink:#101418;--mut:#5c6672;--card:#fff;--rad:16px;font:15px/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--ink)}
+.ipanel-rv{--blue:#0b5cff;--ink:#101418;--mut:#5c6672;--card:#fff;--rad:16px;--z-brand:10;--z-wipe:20;--z-handles:30;--z-warn:40;--z-hint:50;--z-modal:999999;font:15px/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--ink)}
 .ipanel-rv *{box-sizing:border-box}
 .rv-card{max-width:560px;margin:0 auto;background:var(--card);border-radius:var(--rad);box-shadow:0 8px 30px rgba(0,0,0,.12);overflow:hidden}
 .rv-steps{display:flex;gap:6px;padding:12px 14px;border-bottom:1px solid #eef1f4;font-size:12px;color:var(--mut)}
@@ -9,10 +9,11 @@
 .rv-print,.rv-grooves,.rv-shade{position:absolute;inset:0;pointer-events:none}
 .rv-print{transform-origin:0 0;background-repeat:repeat}
 .rv-grooves{transform-origin:0 0}
+/* P2-14: Safari < 16 renders solid grey when mix-blend-mode + filter combine. Acceptable for target devices (iPhone 13+). */
 .rv-shade{mix-blend-mode:soft-light;filter:grayscale(1) contrast(1.1) blur(14px);opacity:.75}
 .rv-occl{position:absolute;inset:0;pointer-events:none;background-size:100% 100%}
 .rv-quad{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.rv-h{position:absolute;width:44px;height:44px;margin:-22px;border-radius:50%;background:var(--blue);border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.4);cursor:grab;z-index:9}
+.rv-h{position:absolute;width:44px;height:44px;margin:-22px;border-radius:50%;background:var(--blue);border:3px solid #fff;box-shadow:0 3px 10px rgba(0,0,0,.4);cursor:grab;z-index:var(--z-handles)}
 .rv-sheet{padding:14px}
 .rv-title{font-size:15px;font-weight:600;margin:2px 0 10px}
 .rv-btnrow{display:flex;gap:10px;flex-wrap:wrap}
@@ -36,15 +37,15 @@
 .rv-coverage b{color:var(--blue)}
 .rv-hide{display:none}
 
-.rv-wipe{position:absolute;top:0;bottom:0;width:3px;background:#fff;box-shadow:0 0 10px rgba(0,0,0,.6);cursor:ew-resize;z-index:8;display:none}
+.rv-wipe{position:absolute;top:0;bottom:0;width:3px;background:#fff;box-shadow:0 0 10px rgba(0,0,0,.6);cursor:ew-resize;z-index:var(--z-wipe);display:none}
 .rv-wipe i{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:#fff;color:#0b5cff;font-style:normal;font-size:20px;line-height:44px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,.4)}
-.rv-brand{position:absolute;left:0;right:0;bottom:0;display:none;align-items:center;gap:10px;padding:10px 12px;background:rgba(10,14,20,.72);color:#fff;font-size:12px;z-index:7}
+.rv-brand{position:absolute;left:0;right:0;bottom:0;display:none;align-items:center;gap:10px;padding:10px 12px;background:rgba(10,14,20,.72);color:#fff;font-size:12px;z-index:var(--z-brand)}
 .rv-bname{font-weight:700;font-size:14px}.rv-burl{opacity:.8;margin-right:auto}.rv-bqr{width:44px;height:44px;border-radius:6px;background:#fff}
 @media (prefers-reduced-motion: reduce){.ipanel-rv *{transition:none!important;animation:none!important}}
 .rv-btn:focus-visible,.rv-h:focus-visible,.rv-sw:focus-visible{outline:3px solid #0b5cff;outline-offset:2px}
-.rv-warn{position:absolute;left:8px;right:8px;top:8px;background:rgba(180,30,30,.92);color:#fff;font-size:12px;padding:8px 10px;border-radius:10px;z-index:9}
+.rv-warn{position:absolute;left:8px;right:8px;top:8px;background:rgba(180,30,30,.92);color:#fff;font-size:12px;padding:8px 10px;border-radius:10px;z-index:var(--z-warn)}
 .rv-shadow{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 60px rgba(0,0,0,.4)}
-.rv-hint{position:absolute;right:8px;top:8px;max-width:70%;color:#fff;font-size:12px;padding:6px 10px;border-radius:10px;z-index:9}
+.rv-hint{position:absolute;right:8px;top:8px;max-width:70%;color:#fff;font-size:12px;padding:6px 10px;border-radius:10px;z-index:var(--z-hint)}
 .rv-mine{display:flex;gap:10px;overflow-x:auto;padding:6px 2px}
 .rv-mine img{width:86px;height:64px;object-fit:cover;border-radius:10px;border:2px solid #dfe5ec;cursor:pointer}
 .rv-gl{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;display:none}
@@ -52,7 +53,12 @@
 [data-wpresets] button{flex:0 0 auto;padding:8px 14px;border-radius:999px;background:#eef2f7;border:0;font-size:13px;font-weight:600;color:#334;cursor:pointer}
 .ipanel-ar-btn{display:inline-flex;align-items:center;gap:8px;margin:12px 0;padding:10px 18px;background:#0b5cff;color:#fff;border:0;border-radius:10px;font-weight:600;cursor:pointer;font-size:15px;line-height:1}
 .ipanel-ar-btn:hover{background:#0947c8}
-.ipanel-ar-modal{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:16px}
+.ipanel-ar-modal{position:fixed;inset:0;z-index:var(--z-modal);background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center;padding:16px}
 .ipanel-ar-modal[hidden]{display:none}
 .ipanel-ar-modal-inner{position:relative;background:#f7f8fa;border-radius:16px;max-width:560px;width:100%;max-height:92vh;overflow:auto;padding:8px}
 .ipanel-ar-close{position:sticky;top:8px;float:right;margin:8px 8px 0 0;z-index:2;background:#111;color:#fff;border:0;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:14px}
+
+/* P1-3: modal scroll-lock for iOS Safari + overscroll containment */
+body.rv-modal-open{overflow:hidden;position:fixed;width:100%}
+.ipanel-ar-modal{overscroll-behavior:contain}
+.ipanel-ar-modal-inner{overscroll-behavior:contain}
