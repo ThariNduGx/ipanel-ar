@@ -7,6 +7,8 @@
  * Requires PHP: 8.0
  */
 if (!defined('ABSPATH')) { exit; }
+
+// Keep in sync with the "Version:" header above — bump both together.
 if (!defined('IPANEL_VISUALIZER_VERSION')) {
     define('IPANEL_VISUALIZER_VERSION', '0.4.0');
 }
@@ -14,24 +16,37 @@ if (!defined('IPANEL_VISUALIZER_URL')) {
     define('IPANEL_VISUALIZER_URL', plugin_dir_url(__FILE__));
 }
 
-add_action('wp_enqueue_scripts', function () {
+/**
+ * Dual-plugin architecture:
+ * - [ipanel_viewer]  → 3D model viewer (GLB/USDZ) via viewer.js
+ * - [ipanel_room_visualizer] → AR room visualization via visualizer.js + renderers
+ * Shared: constants, cache exclusions. Independent: JS/CSS stacks.
+ */
+
+// P2-1: Load assets only when shortcode fires (not globally)
+add_shortcode('ipanel_viewer', function ($atts) {
+    $a = shortcode_atts(['glb' => '', 'usdz' => '', 'height' => '420'], $atts);
+    if (empty($a['glb'])) { return ''; }
+
+    // Enqueue only when this shortcode is used
     wp_enqueue_style('ipanel-viewer', IPANEL_VISUALIZER_URL . 'assets/css/viewer.css', [], IPANEL_VISUALIZER_VERSION);
     wp_enqueue_script('ipanel-viewer', IPANEL_VISUALIZER_URL . 'assets/js/viewer.js', [], IPANEL_VISUALIZER_VERSION, true);
+
+    ob_start(); ?>
+    <div class="ipanel-viewer"
+         data-glb="<?php echo esc_url($a['glb']); ?>"
+         data-usdz="<?php echo esc_url($a['usdz']); ?>"
+         style="height:<?php echo (int) $a['height']; ?>px">
+        <button class="ipanel-load-btn" type="button">View in 3D / AR</button>
+    </div>
+    <?php return ob_get_clean();
 });
 
 require_once __DIR__.'/includes/class-visualizer.php';
 require_once __DIR__.'/includes/class-compat.php';
 require_once __DIR__.'/includes/class-elementor.php';
 
-add_shortcode('ipanel_viewer', function ($atts) {
-    $a = shortcode_atts(['glb' => '', 'usdz' => '', 'height' => '420'], $atts);
-    if (empty($a['glb'])) { return ''; }
-    ob_start(); ?>
-    <div class="ipanel-viewer"
-         data-glb="<?php echo esc_url($a['glb']); ?>"
-         data-usdz="<?php echo esc_url($a['usdz']); ?>"
-         style="height:<?php echo esc_attr((int) $a['height']); ?>px">
-        <button class="ipanel-load-btn" type="button">View in 3D / AR</button>
-    </div>
-    <?php return ob_get_clean();
+// P4-1: Deactivation hook for WordPress.org compliance
+register_deactivation_hook(__FILE__, function () {
+    flush_rewrite_rules();
 });
