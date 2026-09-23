@@ -532,7 +532,13 @@ function init(root){
       }
       octx.putImageData(oi,0,0);
       if(occCount>mw*mh*0.005){
-        const ou='url('+oc.toDataURL()+')';
+        // Feather edges with Gaussian blur
+        const blurCanvas=document.createElement('canvas');
+        blurCanvas.width=mw; blurCanvas.height=mh;
+        const blurCtx=blurCanvas.getContext('2d');
+        blurCtx.filter='blur(3px)';
+        blurCtx.drawImage(oc,0,0);
+        const ou='url('+blurCanvas.toDataURL()+')';
         occl.style.webkitMaskImage=ou; occl.style.maskImage=ou;
         occl.style.webkitMaskSize='100% 100%'; occl.style.maskSize='100% 100%';
         occl.style.backgroundImage='url('+S.photo+')';
@@ -582,7 +588,13 @@ function init(root){
           else oi2.data[o+3]=0;
         }
         octx.putImageData(oi2,0,0);
-        const ou2='url('+oc.toDataURL()+')';
+        // Feather edges with Gaussian blur
+        const blurCanvas2=document.createElement('canvas');
+        blurCanvas2.width=mw; blurCanvas2.height=mh;
+        const blurCtx2=blurCanvas2.getContext('2d');
+        blurCtx2.filter='blur(3px)';
+        blurCtx2.drawImage(oc,0,0);
+        const ou2='url('+blurCanvas2.toDataURL()+')';
         occl.style.webkitMaskImage=ou2; occl.style.maskImage=ou2;
         occl.style.webkitMaskSize='100% 100%'; occl.style.maskSize='100% 100%';
         occl.style.backgroundImage='url('+S.photo+')';
