@@ -565,10 +565,15 @@ function init(root){
           if(comp[y*mw+x]){const sx=Math.floor(x/mw*dw),sy=Math.floor(y/mh*dh);vals.push(arr[sy*dw+sx]);}
         }
         vals.sort((a,b)=>a-b);
-        const med=vals[Math.floor(vals.length/2)]||1;
+        const n=vals.length;
+        const med=n>0?vals[Math.floor(n/2)]:1;
+        const q1=n>0?vals[Math.floor(n*0.25)]:0;
+        const q3=n>0?vals[Math.floor(n*0.75)]:0;
+        const iqr=q3-q1;
+        const thresh=med-1.5*iqr;
         for(let y=miny;y<=maxy;y++) for(let x=minx;x<=maxx;x++){
           const sx=Math.floor(x/mw*dw), sy=Math.floor(y/mh*dh);
-          if(arr[sy*dw+sx] < med*0.85) occ[y*mw+x]=1;
+          if(arr[sy*dw+sx] < thresh) occ[y*mw+x]=1;
         }
         const oi2=octx.createImageData(mw,mh);
         for(let i=0;i<mw*mh;i++){
